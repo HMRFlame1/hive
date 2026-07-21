@@ -2,7 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#00e5a0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="HIVE">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/1hive_orig.png">
 <title>HIVE — Command Interface</title>
 <style>
 :root{--bg:#07080c;--panel:#0f1118;--panel2:#161a24;--border:#2a3142;--accent:#00e5a0;--accent2:#00b4d8;--danger:#ff3b5c;--warn:#ffb020;--ok:#00e5a0;--text:#e8edf5;--muted:#8b95a8}
@@ -102,7 +109,43 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .toast.danger{border-left-color:var(--danger)}.toast.warn{border-left-color:var(--warn)}
 @keyframes slideIn{from{transform:translateX(26px);opacity:0}to{transform:translateX(0);opacity:1}}
 .empty{text-align:center;color:var(--muted);padding:16px 5px;font-size:.75rem}
-@media(max-width:900px){.main{grid-template-columns:1fr}.panel{max-height:200px}}
+
+/* ===== PHONE / MOBILE ===== */
+@media (max-width: 900px) {
+  .main {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  .panel {
+    max-height: none;
+    border-right: none !important;
+    border-left: none !important;
+    border-bottom: 1px solid var(--border);
+  }
+  .panel:last-child { border-bottom: none; }
+  .battlefield { grid-template-columns: 1fr; gap: 8px; }
+  .leader-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .leader-card img { height: 90px; }
+  .topbar { flex-wrap: wrap; gap: 8px; padding: 8px 10px; }
+  .commander-info { margin-left: 0; width: 100%; justify-content: space-between; }
+  .action-bar { position: sticky; bottom: 0; z-index: 50; padding: 10px; gap: 8px; }
+  .btn { padding: 12px 14px; font-size: 0.85rem; min-height: 44px; }
+  .btn.primary, .btn.danger { flex: 1; }
+  .unit-card, .combat-card, .store-item, .veh-card { min-height: 52px; }
+  .modal { max-width: 100%; margin: 8px; padding: 16px; border-radius: 14px; }
+  .atk-portraits img { width: 64px; height: 64px; }
+  .sector-grid { grid-template-columns: 1fr 1fr; }
+  .tab { padding: 12px 4px; font-size: 0.72rem; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+  body { padding-bottom: env(safe-area-inset-bottom); }
+}
+
+@media (max-width: 480px) {
+  .leader-grid { grid-template-columns: 1fr 1fr; }
+  .res-item { font-size: 0.7rem; padding: 4px 7px; }
+  .logo-img { max-width: 180px; }
+  .start-btn { width: 100%; max-width: 280px; padding: 14px; font-size: 1rem; }
+}
+
 </style>
 </head>
 <body>
@@ -377,6 +420,20 @@ function closeDetail(){document.getElementById('detailOverlay').classList.remove
 function toast(msg,type=''){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='.3s';setTimeout(()=>t.remove(),300);},2500);}
 setInterval(()=>{if(state.phase==='outpost'&&Math.random()<.1)runScan();},55000);
 init();
+
+// PWA install + service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // Simple offline cache for the game shell
+    navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  });
+}
+// Show install prompt helper
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+});
 </script>
 </body>
 </html>
