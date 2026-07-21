@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HIVE — Command Interface</title>
+<style>
+  :root {
+    --bg: #07080c;
+    --panel: #0f1118;
+    --panel2: #161a24;
+    --border: #2a3142;
+    --accent: #00e5a0;
+    --accent2: #00b4d8;
+    --danger: #ff3b5c;
+    --warn: #ffb020;
+    --ok: #00e5a0;
+    --text: #e8edf5;
+    --muted: #8b95a8;
+    --infected: #9f1239;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+  }
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ===== TITLE / CHARACTER SELECT ===== */
+  #titleScreen {
+    align-items: center; justify-content: center;
+    background: radial-gradient(ellipse at 50% 20%, #0a1a18 0%, #07080c 70%);
+    padding: 30px 20px; text-align: center;
+  }
+  .logo-img { max-width: 280px; width: 100%; margin-bottom: 12px; filter: drop-shadow(0 0 20px rgba(0,229,160,0.3)); }
+  .tagline { color: var(--muted); letter-spacing: 4px; font-size: 0.85rem; margin-bottom: 28px; }
+  .leader-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px; max-width: 900px; width: 100%; margin-bottom: 24px;
+  }
+  .leader-card {
+    background: var(--panel); border: 2px solid var(--border); border-radius: 14px;
+    padding: 12px; cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .leader-card:hover { border-color: var(--accent); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,229,160,0.2); }
+  .leader-card.selected { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,160,0.35); }
+  .leader-card img { width: 100%; height: 140px; object-fit: contain; border-radius: 8px; background: #0a0c12; margin-bottom: 8px; }
+  .leader-card h3 { font-size: 0.95rem; margin-bottom: 2px; }
+  .leader-card .rank { font-size: 0.7rem; color: var(--accent); }
+  .start-btn {
+    background: linear-gradient(135deg, #00e5a0, #00b4d8); color: #04120e;
+    border: none; padding: 14px 42px; font-size: 1.05rem; font-weight: 800;
+    border-radius: 10px; cursor: pointer; letter-spacing: 1px;
+  }
+  .start-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .start-btn:hover:not(:disabled) { transform: scale(1.04); }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    background: var(--panel); border-bottom: 1px solid var(--border);
+    padding: 8px 16px; display: flex; align-items: center; gap: 18px; flex-shrink: 0;
+  }
+  .logo-small { height: 32px; }
+  .res { display: flex; gap: 12px; }
+  .res-item {
+    background: var(--panel2); padding: 5px 10px; border-radius: 6px;
+    font-size: 0.8rem; font-weight: 600; display: flex; align-items: center; gap: 5px;
+  }
+  .res-item span { color: var(--accent); }
+  .commander-info { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
+  .sanity-bar { width: 100px; height: 8px; background: #1a2030; border-radius: 4px; overflow: hidden; }
+  .sanity-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.4s; }
+
+  /* ===== MAIN LAYOUT ===== */
+  .main {
+    flex: 1; display: grid; grid-template-columns: 260px 1fr 280px; overflow: hidden;
+  }
+  .panel { background: var(--panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+  .panel:last-child { border-right: none; border-left: 1px solid var(--border); }
+  .panel-h {
+    padding: 10px 12px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel-b { flex: 1; overflow-y: auto; padding: 10px; }
+
+  /* Tabs */
+  .tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .tab {
+    flex: 1; text-align: center; padding: 9px 4px; font-size: 0.7rem; font-weight: 700;
+    cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Sector map */
+  .sector-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .sector {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px; cursor: pointer; transition: all 0.2s; min-height: 70px;
+  }
+  .sector:hover { border-color: var(--accent); }
+  .sector.locked { opacity: 0.4; cursor: not-allowed; }
+  .sector.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .sector.hot { border-color: var(--danger); animation: pulse-hot 2s infinite; }
+  @keyframes pulse-hot { 0%,100%{box-shadow:0 0 0 0 rgba(255,59,92,0.3)} 50%{box-shadow:0 0 8px 2px rgba(255,59,92,0.25)} }
+  .sector-name { font-weight: 700; font-size: 0.8rem; }
+  .sector-status { font-size: 0.65rem; color: var(--muted); margin-top: 3px; }
+
+  /* Unit cards */
+  .unit-card {
+    background: var(--panel2); border: 2px solid var(--border); border-radius: 10px;
+    padding: 8px; margin-bottom: 8px; cursor: pointer; transition: all 0.2s; position: relative;
+    display: flex; gap: 8px; align-items: center;
+  }
+  .unit-card:hover { border-color: var(--accent); transform: scale(1.02); }
+  .unit-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,229,160,0.3); }
+  .unit-card.acted { opacity: 0.5; filter: grayscale(0.4); }
+  .unit-card.infected { border-color: var(--infected); }
+  .unit-card img { width: 48px; height: 48px; object-fit: contain; border-radius: 6px; background: #0a0c12; }
+  .unit-info { flex: 1; min-width: 0; }
+  .unit-name { font-weight: 700; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .unit-role { font-size: 0.65rem; color: var(--muted); }
+  .bar { height: 5px; background: #1a2030; border-radius: 3px; overflow: hidden; margin-top: 3px; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.35s; }
+  .hp-fill { background: linear-gradient(90deg, #00e5a0, #34d399); }
+  .san-fill { background: linear-gradient(90deg, #00b4d8, #67e8f9); }
+
+  /* Battlefield */
+  .center { display: flex; flex-direction: column; background: #0a0c12; overflow: hidden; }
+  .mission-h {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .battlefield {
+    flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 12px; overflow-y: auto;
+  }
+  .side-title { font-size: 0.7rem; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; letter-spacing: 1px; }
+  .combat-card {
+    background: var(--panel); border: 2px solid var(--border); border-radius: 10px;
+    padding: 10px; margin-bottom: 8px; cursor: pointer; transition: all 0.15s; display: flex; gap: 8px; align-items: center;
+  }
+  .combat-card:hover { border-color: var(--accent); }
+  .combat-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,229,160,0.3); }
+  .combat-card.enemy { border-color: #5c1a1a; background: #140c0e; }
+  .combat-card.enemy:hover { border-color: var(--danger); }
+  .combat-card.dead { opacity: 0.3; filter: grayscale(0.8); pointer-events: none; }
+  .combat-card.acted { opacity: 0.5; }
+  .combat-card img { width: 42px; height: 42px; object-fit: contain; border-radius: 5px; background: #0a0c12; }
+  .action-bar {
+    padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-wrap: wrap; background: var(--panel);
+  }
+  .btn {
+    background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+    padding: 9px 14px; border-radius: 7px; font-weight: 600; font-size: 0.8rem; cursor: pointer;
+  }
+  .btn:hover:not(:disabled) { border-color: var(--accent); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.primary { background: linear-gradient(135deg, #00e5a0, #00b4d8); border: none; color: #04120e; }
+  .btn.danger { background: linear-gradient(135deg, #ff3b5c, #c0102e); border: none; color: white; }
+
+  /* Command Centre */
+  .radar-box {
+    background: #0a1210; border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px; margin-bottom: 10px; text-align: center; position: relative; overflow: hidden;
+  }
+  .radar-circle {
+    width: 140px; height: 140px; margin: 0 auto 8px; border-radius: 50%;
+    border: 2px solid rgba(0,229,160,0.3); position: relative;
+    background: radial-gradient(circle, #0a1a14 0%, #050808 70%);
+  }
+  .radar-sweep {
+    position: absolute; top: 50%; left: 50%; width: 50%; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent));
+    transform-origin: left center; animation: sweep 3s linear infinite;
+  }
+  @keyframes sweep { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .radar-blip {
+    position: absolute; width: 8px; height: 8px; background: var(--danger);
+    border-radius: 50%; box-shadow: 0 0 6px var(--danger); animation: blip 1.5s infinite;
+  }
+  @keyframes blip { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .cam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 8px; }
+  .cam {
+    background: #0a0c12; border: 1px solid var(--border); border-radius: 6px;
+    height: 60px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; color: var(--muted); cursor: pointer; position: relative; overflow: hidden;
+  }
+  .cam:hover { border-color: var(--accent); }
+  .cam.active { border-color: var(--accent); color: var(--accent); }
+  .cam-static { position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px); opacity: 0.4; }
+
+  /* Vehicles */
+  .veh-card {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; margin-bottom: 6px; display: flex; gap: 8px; align-items: center; cursor: pointer;
+  }
+  .veh-card:hover { border-color: var(--accent); }
+  .veh-card img { width: 50px; height: 36px; object-fit: contain; }
+  .veh-card.deployed { border-color: var(--ok); }
+
+  /* Transmission log */
+  .tx-item {
+    background: var(--panel2); border-left: 3px solid var(--accent2); padding: 8px 10px;
+    margin-bottom: 6px; border-radius: 0 6px 6px 0; font-size: 0.75rem;
+  }
+  .tx-item.danger { border-left-color: var(--danger); }
+  .tx-item.warn { border-left-color: var(--warn); }
+  .tx-time { font-size: 0.65rem; color: var(--muted); }
+
+  /* Modals */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.88);
+    display: none; align-items: center; justify-content: center; z-index: 500; padding: 16px;
+  }
+  .overlay.active { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+    max-width: 480px; width: 100%; padding: 22px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h2 { font-size: 1.2rem; margin-bottom: 6px; }
+  .modal-sub { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
+
+  /* Attack simulation */
+  .atk-stage { text-align: center; margin: 16px 0; }
+  .atk-portraits { display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 12px; }
+  .atk-portraits img { width: 70px; height: 70px; object-fit: contain; border-radius: 8px; background: #0a0c12; }
+  .atk-vs { font-size: 1.4rem; font-weight: 800; color: var(--danger); }
+  .atk-bar { height: 10px; background: #1a2030; border-radius: 5px; overflow: hidden; margin: 10px 0; }
+  .atk-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width 0.08s linear; }
+  .atk-log { font-size: 0.85rem; min-height: 40px; color: var(--muted); }
+
+  /* Store */
+  .store-item {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px; margin-bottom: 8px; display: flex; gap: 10px; align-items: center; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .store-item:hover { border-color: var(--accent); transform: scale(1.02); }
+  .store-item img { width: 48px; height: 48px; object-fit: contain; }
+  .store-info { flex: 1; }
+  .store-info strong { display: block; font-size: 0.85rem; }
+  .store-info small { color: var(--muted); font-size: 0.7rem; }
+  .store-cost { color: var(--accent); font-weight: 700; font-size: 0.85rem; }
+
+  .toast-c { position: fixed; bottom: 16px; right: 16px; display: flex; flex-direction: column; gap: 6px; z-index: 1000; pointer-events: none; }
+  .toast {
+    background: var(--panel); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    padding: 10px 14px; border-radius: 7px; font-size: 0.8rem; max-width: 300px;
+    animation: slideIn 0.3s ease;
+  }
+  .toast.danger { border-left-color: var(--danger); }
+  .toast.warn { border-left-color: var(--warn); }
+  @keyframes slideIn { from{transform:translateX(30px);opacity:0} to{transform:translateX(0);opacity:1} }
+
+  .empty { text-align: center; color: var(--muted); padding: 20px 8px; font-size: 0.8rem; }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+    .panel { max-height: 240px; border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<!-- TITLE -->
+<div id="titleScreen" class="screen active">
+  <img class="logo-img" src="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/1hive_orig.png" alt="HIVE">
+  <div class="tagline">SELECT SQUAD LEADER</div>
+  <div class="leader-grid" id="leaderGrid"></div>
+  <button class="start-btn" id="startBtn" disabled>ENTER COMMAND</button>
+</div>
+
+<!-- GAME -->
+<div id="game" class="screen">
+  <div class="topbar">
+    <img class="logo-small" src="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/1hive_orig.png" alt="HIVE">
+    <div class="res">
+      <div class="res-item">⚙️ <span id="resScrap">0</span></div>
+      <div class="res-item">🧬 <span id="resBio">0</span></div>
+      <div class="res-item">💎 <span id="resVoid">0</span></div>
+    </div>
+    <div class="commander-info">
+      <span id="cmdName">—</span>
+      <div class="sanity-bar"><div class="sanity-fill" id="cmdSanity" style="width:100%"></div></div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT: MAP + COMMAND -->
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab active" data-tab="sectors">SECTORS</div>
+        <div class="tab" data-tab="command">COMMAND</div>
+        <div class="tab" data-tab="store">STORE</div>
+      </div>
+      <div class="panel-b" id="leftPanel"></div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center">
+      <div class="mission-h">
+        <div>
+          <div id="missionTitle" style="font-weight:700;font-size:0.95rem">Command Centre Online</div>
+          <div id="missionSub" style="font-size:0.7rem;color:var(--muted)">Select a sector to deploy</div>
+        </div>
+        <div id="missionPhase" style="font-size:0.7rem;background:var(--panel2);padding:4px 10px;border-radius:12px;color:var(--accent)">OUTPOST</div>
+      </div>
+      <div class="battlefield" id="battlefield">
+        <div>
+          <div class="side-title">Your Forces</div>
+          <div id="playerSide"><div class="empty">Deploy a squad to begin</div></div>
+        </div>
+        <div>
+          <div class="side-title">Hostiles — Vorrh</div>
+          <div id="enemySide"><div class="empty">No active contacts</div></div>
+        </div>
+      </div>
+      <div class="action-bar" id="actionBar">
+        <button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button>
+        <button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button>
+        <button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button>
+        <button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button>
+      </div>
+    </div>
+
+    <!-- RIGHT: SQUAD + VEHICLES + TX -->
+    <div class="panel">
+      <div class="tabs">
+        <div class="tab active" data-tab="squad">SQUAD</div>
+        <div class="tab" data-tab="vehicles">VEHICLES</div>
+        <div class="tab" data-tab="tx">COMMS</div>
+      </div>
+      <div class="panel-b" id="rightPanel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ATTACK SIM MODAL -->
+<div class="overlay" id="atkOverlay">
+  <div class="modal">
+    <h2 id="atkTitle">ENGAGING</h2>
+    <div class="atk-stage">
+      <div class="atk-portraits">
+        <img id="atkUnitImg" src="" alt="">
+        <div class="atk-vs">VS</div>
+        <img id="atkEnemyImg" src="" alt="">
+      </div>
+      <div id="atkNames" style="font-size:0.9rem;margin-bottom:8px"></div>
+      <div class="atk-bar"><div class="atk-fill" id="atkBar"></div></div>
+      <div class="atk-log" id="atkLog">Acquiring target...</div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL / GENERIC MODAL -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal" id="detailBox"></div>
+</div>
+
+<div class="toast-c" id="toasts"></div>
+
+<script>
+// ===================== DATA =====================
+const LEADERS = [
+  { id:'susan', name:'Susan', rank:'Lt. Commander', last:'Voss', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/suszan_orig.png', bonus:'Support', desc:'Strategic mind. Better research yields.' },
+  { id:'mike', name:'Mike', rank:'Captain', last:'Draven', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/mike_orig.png', bonus:'Assault', desc:'Front-line veteran. Squad starts with higher HP.' },
+  { id:'gritt', name:'Gritt', rank:'Sergeant', last:'Kane', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/grift_orig.png', bonus:'Hardened', desc:'Unbreakable. Squad resists sanity loss.' },
+  { id:'duke', name:'Duke', rank:'Corporal', last:'Reyes', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/duke_orig.png', bonus:'Recon', desc:'Scout specialist. Better sector intel.' },
+  { id:'vanessa', name:'Vanessa', rank:'Lieutenant', last:'Cross', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/vanessa_orig.png', bonus:'Tactical', desc:'Precision planner. Weapons cost less.' },
+  { id:'savannah', name:'Savannah', rank:'Specialist', last:'Holt', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/savannah_orig.png', bonus:'Tech', desc:'Systems expert. Hacking and vehicles stronger.' }
+];
+
+const SOLDIERS = [
+  { id:'mark3', name:'Mark-3 Unit', rank:'Private', role:'Rifle', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/makr31_orig.png', hp:85, san:70 },
+  { id:'sarge', name:'Sgt. Harlan', rank:'Sergeant', role:'Breacher', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/marine1_orig.png', hp:100, san:65 },
+  { id:'mike2', name:'Cpl. Mike Torres', rank:'Corporal', role:'Heavy', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/mike_orig.png', hp:95, san:60 },
+  { id:'susan2', name:'Lt. Susan Voss', rank:'Lieutenant', role:'Medic', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/suszan_orig.png', hp:70, san:90 },
+  { id:'gritt2', name:'Sgt. Gritt Kane', rank:'Sergeant', role:'Warden', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/grift_orig.png', hp:110, san:55 },
+  { id:'duke2', name:'Cpl. Duke Reyes', rank:'Corporal', role:'Scout', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/duke_orig.png', hp:75, san:80 },
+  { id:'van2', name:'Lt. Vanessa Cross', rank:'Lieutenant', role:'Tactician', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/vanessa_orig.png', hp:80, san:85 },
+  { id:'sav2', name:'Spc. Savannah Holt', rank:'Specialist', role:'Engineer', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/savannah_orig.png', hp:70, san:75 }
+];
+
+const VORRH = [
+  { name:'Vorrh Drone', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/inf-3_orig.png', hp:40, dmg:8, sanDmg:5 },
+  { name:'Vorrh Stalker', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/inf4_orig.png', hp:55, dmg:12, sanDmg:12 },
+  { name:'Vorrh Warrior', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/inf2_orig.png', hp:75, dmg:16, sanDmg:8 },
+  { name:'Vorrh Husk', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/inf1_orig.png', hp:90, dmg:14, sanDmg:18 },
+  { name:'Vorrh Elite', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/inf5_orig.png', hp:130, dmg:22, sanDmg:15 }
+];
+
+const VEHICLES = [
+  { id:'apc', name:'T2 APC', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/t2_orig.png', type:'transport', desc:'Troop transport. Can extract squads under fire.', cost:60 },
+  { id:'tank', name:'Main Battle Tank', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/t1_orig.png', type:'armor', desc:'Heavy fire support. +damage to deployed squad.', cost:90 },
+  { id:'alien_tank', name:'Captured Vorrh Tank', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/al2_orig.png', type:'armor', desc:'Salvaged alien armor. High risk, high reward.', cost:120 },
+  { id:'patrol', name:'Vorrh Patrol Craft', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/al1_orig.png', type:'recon', desc:'Fast scout vehicle. Reveals sector intel.', cost:50 }
+];
+
+const BUILDINGS = [
+  { id:'barracks', name:'Barracks', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/eclaf_orig.jpg', cost:{scrap:40}, time:12 },
+  { id:'medbay', name:'Medbay', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/uoeso_orig.jpg', cost:{scrap:35,bio:15}, time:10 },
+  { id:'forge', name:'Forge', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/almta_orig.jpg', cost:{scrap:50}, time:15 },
+  { id:'lab', name:'Research Lab', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/image-2026-07-21t212042-276_orig.jpg', cost:{scrap:30,void:10}, time:18 },
+  { id:'sanctuary', name:'Sanctuary', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/i5sgx_orig.jpg', cost:{bio:25,void:8}, time:14 }
+];
+
+const WEAPONS_STORE = [
+  { id:'w1', name:'Pulse Rifle', dmg:18, effect:'standard', cost:25, desc:'Reliable standard issue' },
+  { id:'w2', name:'Shard Carbine', dmg:24, effect:'pierce', cost:40, desc:'High velocity penetrator' },
+  { id:'w3', name:'Void Cutter', dmg:30, effect:'bleed', cost:55, desc:'Tears organic matter' },
+  { id:'w4', name:'Echo Cannon', dmg:22, effect:'stun', cost:45, desc:'Disrupts Vorrh signals' },
+  { id:'w5', name:'Sanity Anchor', dmg:10, effect:'san+12', cost:35, desc:'Stabilizes the mind under fire' }
+];
+
+const SECTORS = [
+  { id:'alpha', name:'Alpha Ridge', status:'secured', unlocked:true, threat:1, desc:'Landing zone. Relatively stable.' },
+  { id:'bravo', name:'Bravo Basin', status:'contested', unlocked:true, threat:2, desc:'Resource-rich lowlands. Vorrh activity rising.' },
+  { id:'charlie', name:'Charlie Spire', status:'hot', unlocked:false, threat:3, desc:'High ground. Strong Vorrh presence.' },
+  { id:'delta', name:'Delta Ruins', status:'unknown', unlocked:false, threat:3, desc:'Ancient structures. Signals are strange.' },
+  { id:'echo', name:'Echo Depths', status:'locked', unlocked:false, threat:4, desc:'Deep hive tunnels. Extreme danger.' },
+  { id:'foxtrot', name:'Foxtrot Gate', status:'locked', unlocked:false, threat:5, desc:'Suspected Vorrh command node.' }
+];
+
+// ===================== STATE =====================
+let state = {
+  leader: null,
+  scrap: 100, bio: 40, void: 15,
+  sanity: 100,
+  units: [],
+  weapons: [],
+  vehicles: [],
+  buildings: [],
+  sectors: JSON.parse(JSON.stringify(SECTORS)),
+  currentSector: null,
+  phase: 'outpost',
+  selectedUnit: null,
+  enemies: [],
+  mission: 0,
+  turn: 0,
+  retreatedThisTurn: false,
+  trapped: false,
+  transmissions: [],
+  radarContacts: []
+};
+
+// ===================== INIT =====================
+function init() {
+  const grid = document.getElementById('leaderGrid');
+  LEADERS.forEach(l => {
+    const card = document.createElement('div');
+    card.className = 'leader-card';
+    card.innerHTML = `<img src="${l.img}" alt="${l.name}"><h3>${l.rank} ${l.name} ${l.last}</h3><div class="rank">${l.bonus}</div>`;
+    card.onclick = () => {
+      document.querySelectorAll('.leader-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      state.leader = l;
+      document.getElementById('startBtn').disabled = false;
+    };
+    grid.appendChild(card);
+  });
+  document.getElementById('startBtn').onclick = startGame;
+
+  // Tab switching
+  document.querySelectorAll('.tabs').forEach(tabBar => {
+    tabBar.querySelectorAll('.tab').forEach(tab => {
+      tab.onclick = () => {
+        tabBar.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        const side = tabBar.closest('.panel').querySelector('.panel-b').id;
+        if (side === 'leftPanel') renderLeft(tab.dataset.tab);
+        else renderRight(tab.dataset.tab);
+      };
+    });
+  });
+}
+
+function startGame() {
+  if (!state.leader) return;
+  // Starting squad based on leader
+  const startIds = ['sarge','mark3','duke2'];
+  if (state.leader.bonus === 'Assault') startIds.push('mike2');
+  if (state.leader.bonus === 'Support') startIds.push('susan2');
+  if (state.leader.bonus === 'Hardened') startIds.push('gritt2');
+
+  state.units = startIds.map((id, i) => {
+    const s = SOLDIERS.find(x => x.id === id) || SOLDIERS[0];
+    return {
+      id: 'u'+i, name: s.name, rank: s.rank, role: s.role, img: s.img,
+      hp: s.hp + (state.leader.bonus==='Assault'?10:0),
+      maxHp: s.hp + (state.leader.bonus==='Assault'?10:0),
+      san: s.san, maxSan: s.san,
+      weapon: null, status: 'stable', acted: false
+    };
+  });
+
+  state.weapons = [
+    { id:'sw1', name:'Pulse Rifle', dmg:16, effect:'standard', desc:'Standard issue' },
+    { id:'sw2', name:'Combat Shotgun', dmg:22, effect:'close', desc:'Devastating at range zero' }
+  ];
+
+  document.getElementById('titleScreen').classList.remove('active');
+  document.getElementById('game').classList.add('active');
+  document.getElementById('cmdName').textContent = `${state.leader.rank} ${state.leader.name} ${state.leader.last}`;
+
+  addTx('Command', 'Hive Command online. All sectors reporting.', 'ok');
+  addTx('Intel', 'Vorrh presence confirmed across the northern ridge. Stay sharp.', 'warn');
+
+  renderAll();
+  // Story intro
+  showDetail(`Welcome, ${state.leader.rank} ${state.leader.name}`,
+    `The planet is no longer ours. The Vorrh — a parasitic hive species — have taken the surface. They do not conquer. They convert.<br><br>
+    You are the last organised command element. Your outpost is the only light left in this sector.<br><br>
+    Deploy carefully. Listen to the transmissions. Some of them will stop mid-sentence.`,
+    [{text:'Acknowledged', action: closeDetail}]);
+}
+
+// ===================== RENDER =====================
+function renderAll() {
+  updateRes();
+  renderLeft(document.querySelector('#leftPanel')?.closest('.panel')?.querySelector('.tab.active')?.dataset.tab || 'sectors');
+  renderRight(document.querySelector('#rightPanel')?.closest('.panel')?.querySelector('.tab.active')?.dataset.tab || 'squad');
+  renderBattlefield();
+}
+
+function updateRes() {
+  document.getElementById('resScrap').textContent = state.scrap;
+  document.getElementById('resBio').textContent = state.bio;
+  document.getElementById('resVoid').textContent = state.void;
+  document.getElementById('cmdSanity').style.width = Math.max(0, state.sanity) + '%';
+}
+
+function renderLeft(tab) {
+  const p = document.getElementById('leftPanel');
+  if (tab === 'sectors') {
+    p.innerHTML = '<div class="sector-grid"></div>';
+    const grid = p.querySelector('.sector-grid');
+    state.sectors.forEach(s => {
+      const el = document.createElement('div');
+      el.className = 'sector' + (s.unlocked ? '' : ' locked') + (state.currentSector===s.id?' active':'') + (s.status==='hot'?' hot':'');
+      el.innerHTML = `<div class="sector-name">${s.name}</div><div class="sector-status">${s.unlocked ? s.status.toUpperCase() : 'LOCKED'} • Threat ${s.threat}</div>`;
+      if (s.unlocked) el.onclick = () => selectSector(s.id);
+      grid.appendChild(el);
+    });
+  } else if (tab === 'command') {
+    p.innerHTML = `
+      <div class="radar-box">
+        <div class="radar-circle" id="radarCircle">
+          <div class="radar-sweep"></div>
+        </div>
+        <div style="font-size:0.75rem;color:var(--muted)">RADAR SWEEP — LIVE</div>
+        <div class="cam-grid">
+          <div class="cam" onclick="viewCam('North')">NORTH<span class="cam-static"></span></div>
+          <div class="cam" onclick="viewCam('East')">EAST<span class="cam-static"></span></div>
+          <div class="cam" onclick="viewCam('South')">SOUTH<span class="cam-static"></span></div>
+          <div class="cam" onclick="viewCam('West')">WEST<span class="cam-static"></span></div>
+        </div>
+      </div>
+      <button class="btn" style="width:100%;margin-top:6px" onclick="runScan()">FORCE SCAN</button>
+    `;
+    updateRadarBlips();
+  } else if (tab === 'store') {
+    p.innerHTML = '<div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px">WEAPONS STORE</div>';
+    WEAPONS_STORE.forEach(w => {
+      const el = document.createElement('div');
+      el.className = 'store-item';
+      el.innerHTML = `<div class="store-info"><strong>${w.name}</strong><small>DMG ${w.dmg} • ${w.effect}<br>${w.desc}</small></div><div class="store-cost">${w.cost}⚙️</div>`;
+      el.onclick = () => buyWeapon(w);
+      p.appendChild(el);
+    });
+  }
+}
+
+function renderRight(tab) {
+  const p = document.getElementById('rightPanel');
+  if (tab === 'squad') {
+    p.innerHTML = '';
+    if (!state.units.length) { p.innerHTML = '<div class="empty">No personnel</div>'; return; }
+    state.units.forEach(u => {
+      const el = document.createElement('div');
+      el.className = 'unit-card' + (u.acted?' acted':'') + (u.status==='infected'?' infected':'') + (state.selectedUnit===u.id?' selected':'');
+      const hp = Math.max(0,(u.hp/u.maxHp)*100);
+      const san = Math.max(0,(u.san/u.maxSan)*100);
+      el.innerHTML = `
+        <img src="${u.img}" alt="">
+        <div class="unit-info">
+          <div class="unit-name">${u.name}</div>
+          <div class="unit-role">${u.rank} • ${u.role}</div>
+          <div class="bar"><div class="bar-fill hp-fill" style="width:${hp}%"></div></div>
+          <div class="bar"><div class="bar-fill san-fill" style="width:${san}%"></div></div>
+        </div>`;
+      el.onclick = () => openUnit(u.id);
+      p.appendChild(el);
+    });
+  } else if (tab === 'vehicles') {
+    p.innerHTML = '';
+    if (!state.vehicles.length) {
+      p.innerHTML = '<div class="empty">No vehicles acquired<br>Purchase from Store or salvage</div>';
+      VEHICLES.slice(0,2).forEach(v => {
+        const el = document.createElement('div');
+        el.className = 'veh-card';
+        el.innerHTML = `<img src="${v.img}"><div><strong style="font-size:0.8rem">${v.name}</strong><div style="font-size:0.65rem;color:var(--muted)">${v.cost}⚙️</div></div>`;
+        el.onclick = () => buyVehicle(v);
+        p.appendChild(el);
+      });
+    } else {
+      state.vehicles.forEach(v => {
+        const el = document.createElement('div');
+        el.className = 'veh-card' + (v.deployed?' deployed':'');
+        el.innerHTML = `<img src="${v.img}"><div><strong style="font-size:0.8rem">${v.name}</strong><div style="font-size:0.65rem;color:var(--muted)">${v.deployed?'DEPLOYED':'Available'}</div></div>`;
+        el.onclick = () => toggleVehicle(v.id);
+        p.appendChild(el);
+      });
+    }
+  } else if (tab === 'tx') {
+    p.innerHTML = '';
+    if (!state.transmissions.length) p.innerHTML = '<div class="empty">No transmissions</div>';
+    state.transmissions.slice().reverse().forEach(t => {
+      const el = document.createElement('div');
+      el.className = 'tx-item ' + (t.type||'');
+      el.innerHTML = `<div class="tx-time">${t.from} — ${t.time}</div>${t.msg}`;
+      p.appendChild(el);
+    });
+  }
+}
+
+function renderBattlefield() {
+  const ps = document.getElementById('playerSide');
+  const es = document.getElementById('enemySide');
+  ps.innerHTML = '';
+  es.innerHTML = '';
+
+  if (state.phase !== 'combat') {
+    ps.innerHTML = '<div class="empty">Deploy a squad to engage</div>';
+    es.innerHTML = '<div class="empty">No active contacts</div>';
+    return;
+  }
+
+  state.units.filter(u => u.hp > 0).forEach(u => {
+    const el = document.createElement('div');
+    el.className = 'combat-card' + (state.selectedUnit===u.id?' selected':'') + (u.acted?' acted':'');
+    const hp = Math.max(0,(u.hp/u.maxHp)*100);
+    el.innerHTML = `<img src="${u.img}"><div><div style="font-weight:700;font-size:0.8rem">${u.name}</div><div class="bar" style="width:80px"><div class="bar-fill hp-fill" style="width:${hp}%"></div></div></div>`;
+    el.onclick = () => {
+      if (u.acted) { toast(u.name + ' already acted', 'warn'); return; }
+      state.selectedUnit = u.id;
+      renderBattlefield();
+      toast(u.name + ' selected — click a Vorrh target', 'ok');
+    };
+    ps.appendChild(el);
+  });
+
+  if (!state.enemies.length) {
+    es.innerHTML = '<div class="empty">Sector clear</div>';
+  } else {
+    state.enemies.forEach((e, i) => {
+      const el = document.createElement('div');
+      el.className = 'combat-card enemy' + (e.hp<=0?' dead':'');
+      const hp = Math.max(0,(e.hp/e.maxHp)*100);
+      el.innerHTML = `<img src="${e.img}"><div><div style="font-weight:700;font-size:0.8rem">${e.name}</div><div class="bar" style="width:80px"><div class="bar-fill" style="width:${hp}%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div></div>`;
+      el.onclick = () => {
+        if (e.hp <= 0) return;
+        if (!state.selectedUnit) { toast('Select a unit first', 'warn'); return; }
+        performAttack(state.selectedUnit, i);
+      };
+      es.appendChild(el);
+    });
+  }
+}
+
+// ===================== SECTORS & DEPLOY =====================
+function selectSector(id) {
+  const s = state.sectors.find(x => x.id === id);
+  if (!s || !s.unlocked) return;
+  state.currentSector = id;
+  document.getElementById('missionTitle').textContent = s.name;
+  document.getElementById('missionSub').textContent = s.desc;
+  renderLeft('sectors');
+}
+
+function tryDeploy() {
+  if (!state.currentSector) { toast('Select a sector first', 'warn'); return; }
+  if (state.units.filter(u=>u.hp>0).length === 0) { toast('No living units', 'danger'); return; }
+
+  // Chance of transmission cut-off event before deploy
+  if (Math.random() < 0.25 && state.mission > 0) {
+    addTx('Unknown Squad', 'Command... we found something in the— ████████ HELP— *static*', 'danger');
+    showDetail('Distress Signal', 'A transmission from a previous deployment just cut out mid-sentence. Something is wrong in that sector.', [
+      {text:'Investigate immediately', action: () => { closeDetail(); beginCombat(); }},
+      {text:'Proceed with caution', action: () => { closeDetail(); beginCombat(); }}
+    ]);
+    return;
+  }
+  beginCombat();
+}
+
+function beginCombat() {
+  const sector = state.sectors.find(s => s.id === state.currentSector);
+  state.phase = 'combat';
+  state.mission++;
+  state.turn = 1;
+  state.selectedUnit = null;
+  state.retreatedThisTurn = false;
+  state.trapped = Math.random() < 0.25 + (sector?.threat||1)*0.08;
+  state.units.forEach(u => u.acted = false);
+
+  const count = Math.min(2 + (sector?.threat||1), 5);
+  state.enemies = [];
+  for (let i=0;i<count;i++) {
+    const t = VORRH[Math.min((sector?.threat||1)-1 + Math.floor(Math.random()*2), VORRH.length-1)];
+    state.enemies.push({
+      name: t.name, img: t.img,
+      hp: t.hp + Math.floor(Math.random()*12),
+      maxHp: t.hp + 12,
+      dmg: t.dmg, sanDmg: t.sanDmg
+    });
+  }
+
+  document.getElementById('missionPhase').textContent = 'COMBAT';
+  document.getElementById('btnDeploy').style.display = 'none';
+  document.getElementById('btnEndTurn').style.display = 'inline-block';
+  document.getElementById('btnRetreat').style.display = 'inline-block';
+  document.getElementById('btnExtract').style.display = 'inline-block';
+
+  addTx('Squad', `Contact in ${sector?.name || 'sector'}. ${count} Vorrh signatures.`, 'warn');
+  toast(`Engaging ${count} Vorrh in ${sector?.name||'sector'}`, 'danger');
+  renderBattlefield();
+  renderRight('squad');
+}
+
+// ===================== ATTACK SIMULATION =====================
+function performAttack(unitId, enemyIdx) {
+  const unit = state.units.find(u => u.id === unitId);
+  const enemy = state.enemies[enemyIdx];
+  if (!unit || !enemy || unit.hp<=0 || enemy.hp<=0) return;
+  if (unit.acted) { toast(unit.name + ' already acted', 'warn'); return; }
+
+  const dmg = (unit.weapon ? unit.weapon.dmg : 10) + Math.floor(Math.random()*6)-2;
+  const finalDmg = Math.max(1, dmg);
+
+  // Launch simulation
+  document.getElementById('atkUnitImg').src = unit.img;
+  document.getElementById('atkEnemyImg').src = enemy.img;
+  document.getElementById('atkNames').textContent = `${unit.name}  →  ${enemy.name}`;
+  document.getElementById('atkTitle').textContent = 'ENGAGING TARGET';
+  document.getElementById('atkLog').textContent = 'Acquiring target lock...';
+  document.getElementById('atkBar').style.width = '0%';
+  document.getElementById('atkOverlay').classList.add('active');
+
+  const stages = [
+    { pct: 25, text: 'Target locked. Weapon cycling...' },
+    { pct: 55, text: 'Firing!' },
+    { pct: 80, text: `Impact — ${finalDmg} damage` },
+    { pct: 100, text: enemy.hp - finalDmg <= 0 ? `${enemy.name} neutralized` : `${enemy.name} still active` }
+  ];
+
+  let i = 0;
+  const bar = document.getElementById('atkBar');
+  const log = document.getElementById('atkLog');
+
+  function nextStage() {
+    if (i >= stages.length) {
+      // Apply results
+      enemy.hp -= finalDmg;
+      unit.acted = true;
+      state.selectedUnit = null;
+
+      if (unit.weapon?.effect === 'lifesteal') unit.hp = Math.min(unit.maxHp, unit.hp + Math.floor(finalDmg*0.25));
+      if (unit.weapon?.effect === 'san+12') unit.san = Math.min(unit.maxSan, unit.san + 8);
+
+      if (enemy.hp <= 0) {
+        state.scrap += 10 + Math.floor(Math.random()*10);
+        state.bio += 4 + Math.floor(Math.random()*5);
+        if (Math.random() < 0.2) state.void += 1;
+        // Unlock chance
+        if (Math.random() < 0.15) unlockNextSector();
+      }
+
+      setTimeout(() => {
+        document.getElementById('atkOverlay').classList.remove('active');
+        if (state.enemies.every(e => e.hp <= 0)) {
+          endCombat(true);
+        } else {
+          if (Math.random() < 0.3) setTimeout(enemyTurn, 500);
+          renderBattlefield();
+          renderRight('squad');
+          updateRes();
+        }
+      }, 700);
+      return;
+    }
+    const s = stages[i];
+    bar.style.width = s.pct + '%';
+    log.textContent = s.text;
+    i++;
+    setTimeout(nextStage, 550);
+  }
+  setTimeout(nextStage, 400);
+}
+
+function enemyTurn() {
+  const livingE = state.enemies.filter(e => e.hp > 0);
+  const livingU = state.units.filter(u => u.hp > 0);
+  if (!livingE.length || !livingU.length) return;
+
+  const atk = livingE[Math.floor(Math.random()*livingE.length)];
+  const tgt = livingU[Math.floor(Math.random()*livingU.length)];
+  const dmg = atk.dmg + Math.floor(Math.random()*4)-1;
+  tgt.hp = Math.max(0, tgt.hp - dmg);
+  state.sanity = Math.max(0, state.sanity - atk.sanDmg);
+
+  toast(`${atk.name} hits ${tgt.name} (−${dmg})`, 'danger');
+  if (tgt.hp <= 0) toast(`${tgt.name} is down!`, 'danger');
+  else if (tgt.hp < tgt.maxHp*0.35) tgt.status = 'wounded';
+
+  if (livingU.every(u => u.hp <= 0)) endCombat(false);
+  renderBattlefield();
+  renderRight('squad');
+  updateRes();
+}
+
+function endTurn() {
+  if (state.phase !== 'combat') return;
+  // Simple enemy phase
+  const livingE = state.enemies.filter(e => e.hp > 0);
+  livingE.forEach(() => {
+    if (Math.random() < 0.7) enemyTurn();
+  });
+  state.turn++;
+  state.units.forEach(u => u.acted = false);
+  state.retreatedThisTurn = false;
+  state.sanity = Math.max(0, state.sanity - 2);
+  updateRes();
+  renderBattlefield();
+  renderRight('squad');
+  toast('Enemy phase complete — units ready', 'ok');
+}
+
+function endCombat(victory) {
+  state.phase = 'outpost';
+  state.enemies = [];
+  state.selectedUnit = null;
+  document.getElementById('missionPhase').textContent = 'OUTPOST';
+  document.getElementById('btnDeploy').style.display = 'inline-block';
+  document.getElementById('btnEndTurn').style.display = 'none';
+  document.getElementById('btnRetreat').style.display = 'none';
+  document.getElementById('btnExtract').style.display = 'none';
+
+  if (victory) {
+    state.scrap += 30; state.bio += 12;
+    addTx('Command', `Sector ${state.currentSector} secured. Resources recovered.`, 'ok');
+    toast('Sector secured', 'ok');
+    const s = state.sectors.find(x => x.id === state.currentSector);
+    if (s) s.status = 'secured';
+    if (Math.random() < 0.4) unlockNextSector();
+  } else {
+    addTx('Command', 'Forced extraction. Casualties sustained.', 'danger');
+    state.sanity = Math.max(10, state.sanity - 12);
+    toast('Forced retreat', 'danger');
+  }
+  renderAll();
+}
+
+function retreat() {
+  if (state.retreatedThisTurn) { toast('Already attempted this turn', 'warn'); return; }
+  state.retreatedThisTurn = true;
+  if (state.trapped || state.enemies.filter(e=>e.hp>0).length >= 4) {
+    toast('Exit routes cut off — transport required', 'danger');
+    return;
+  }
+  endCombat(false);
+}
+
+function callTransport() {
+  const hasAPC = state.vehicles.some(v => v.type === 'transport' || v.id === 'apc');
+  if (!hasAPC && state.scrap < 40) {
+    toast('No transport available. Need APC or 40 Scrap for emergency extract.', 'warn');
+    return;
+  }
+  if (!hasAPC) state.scrap -= 40;
+  addTx('Transport', 'Extraction bird inbound. Hold positions.', 'ok');
+  toast('Transport inbound — extracting', 'ok');
+  endCombat(false);
+}
+
+// ===================== SYSTEMS =====================
+function unlockNextSector() {
+  const locked = state.sectors.find(s => !s.unlocked);
+  if (locked) {
+    locked.unlocked = true;
+    locked.status = 'contested';
+    addTx('Intel', `New sector unlocked: ${locked.name}`, 'ok');
+    toast(`Sector unlocked: ${locked.name}`, 'ok');
+  }
+}
+
+function buyWeapon(w) {
+  const cost = state.leader?.bonus === 'Tactical' ? Math.floor(w.cost * 0.8) : w.cost;
+  if (state.scrap < cost) { toast('Insufficient Scrap', 'warn'); return; }
+  state.scrap -= cost;
+  state.weapons.push({ ...w, id: 'w'+Date.now() });
+  toast(`Purchased ${w.name}`, 'ok');
+  updateRes();
+  renderLeft('store');
+}
+
+function buyVehicle(v) {
+  if (state.scrap < v.cost) { toast('Insufficient Scrap', 'warn'); return; }
+  state.scrap -= v.cost;
+  state.vehicles.push({ ...v, deployed: false });
+  toast(`Acquired ${v.name}`, 'ok');
+  updateRes();
+  renderRight('vehicles');
+}
+
+function toggleVehicle(id) {
+  const v = state.vehicles.find(x => x.id === id);
+  if (!v) return;
+  v.deployed = !v.deployed;
+  toast(v.deployed ? `${v.name} deployed to support` : `${v.name} recalled`, 'ok');
+  renderRight('vehicles');
+}
+
+function addTx(from, msg, type='') {
+  const now = new Date();
+  state.transmissions.push({
+    from, msg, type,
+    time: now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0')
+  });
+  if (state.transmissions.length > 30) state.transmissions.shift();
+}
+
+function runScan() {
+  const contacts = 1 + Math.floor(Math.random()*3);
+  state.radarContacts = [];
+  for (let i=0;i<contacts;i++) {
+    state.radarContacts.push({
+      x: 20 + Math.random()*60,
+      y: 20 + Math.random()*60
+    });
+  }
+  updateRadarBlips();
+  addTx('Radar', `Scan complete. ${contacts} unknown signatures detected.`, 'warn');
+  toast(`Radar: ${contacts} contacts`, 'warn');
+  // Random transmission event
+  if (Math.random() < 0.3) {
+    const msgs = [
+      {from:'Outpost 7', msg:'They are inside the walls— *screaming* ████████', type:'danger'},
+      {from:'Scout Team', msg:'Movement in the fog. Multiple. Large.', type:'warn'},
+      {from:'Unknown', msg:'...the song is beautiful... do not listen...', type:'danger'}
+    ];
+    const m = msgs[Math.floor(Math.random()*msgs.length)];
+    addTx(m.from, m.msg, m.type);
+  }
+}
+
+function updateRadarBlips() {
+  const circle = document.getElementById('radarCircle');
+  if (!circle) return;
+  circle.querySelectorAll('.radar-blip').forEach(b => b.remove());
+  state.radarContacts.forEach(c => {
+    const b = document.createElement('div');
+    b.className = 'radar-blip';
+    b.style.left = c.x + '%';
+    b.style.top = c.y + '%';
+    circle.appendChild(b);
+  });
+}
+
+function viewCam(dir) {
+  const events = [
+    'Static. Nothing visible.',
+    'Movement in the treeline.',
+    'Heat signatures — multiple, closing.',
+    'Clear for now.',
+    'A shape just passed the camera. Large.'
+  ];
+  toast(`Camera ${dir}: ${events[Math.floor(Math.random()*events.length)]}`, 'ok');
+}
+
+function openUnit(id) {
+  const u = state.units.find(x => x.id === id);
+  if (!u) return;
+  let acts = '';
+  if (state.phase === 'combat' && !u.acted && u.hp > 0) {
+    acts += `<button class="btn primary" style="width:100%;margin-top:8px" onclick="state.selectedUnit='${u.id}';closeDetail();renderBattlefield();toast('${u.name} selected','ok')">Select for Attack</button>`;
+  }
+  // Equip weapon
+  if (state.weapons.length) {
+    acts += `<div style="margin-top:10px;font-size:0.75rem;color:var(--muted)">Equip weapon:</div>`;
+    state.weapons.forEach(w => {
+      acts += `<button class="btn" style="width:100%;margin-top:4px;font-size:0.75rem" onclick="equipW('${u.id}','${w.id}')">${w.name} (DMG ${w.dmg})</button>`;
+    });
+  }
+
+  showDetail(u.name, `
+    <img src="${u.img}" style="width:80px;height:80px;object-fit:contain;border-radius:8px;background:#0a0c12;margin-bottom:8px">
+    <div style="font-size:0.85rem;color:var(--muted)">${u.rank} • ${u.role}</div>
+    <div style="margin:10px 0">HP ${u.hp}/${u.maxHp} • Sanity ${u.san}/${u.maxSan}</div>
+    <div>Weapon: ${u.weapon ? u.weapon.name : 'Unarmed'}</div>
+    ${acts}
+  `, [{text:'Close', action: closeDetail}]);
+}
+
+function equipW(uid, wid) {
+  const u = state.units.find(x => x.id === uid);
+  const w = state.weapons.find(x => x.id === wid);
+  if (!u || !w) return;
+  if (u.weapon) state.weapons.push(u.weapon);
+  u.weapon = w;
+  state.weapons = state.weapons.filter(x => x.id !== wid);
+  toast(`${u.name} equipped ${w.name}`, 'ok');
+  closeDetail();
+  renderRight('squad');
+}
+
+function showDetail(title, body, choices) {
+  const box = document.getElementById('detailBox');
+  box.innerHTML = `<h2>${title}</h2><div class="modal-sub">${body}</div><div id="detailChoices"></div>`;
+  const ch = document.getElementById('detailChoices');
+  (choices||[]).forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'btn primary';
+    b.style.cssText = 'width:100%;margin-top:8px';
+    b.textContent = c.text;
+    b.onclick = c.action;
+    ch.appendChild(b);
+  });
+  document.getElementById('detailOverlay').classList.add('active');
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('active');
+}
+
+function toast(msg, type='') {
+  const c = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='0.3s'; setTimeout(()=>t.remove(),300); }, 2800);
+}
+
+// Periodic ambient events
+setInterval(() => {
+  if (state.phase === 'outpost' && Math.random() < 0.15) {
+    runScan();
+  }
+}, 45000);
+
+init();
+</script>
+</body>
+</html>
