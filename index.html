@@ -166,11 +166,11 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   <button class="btn danger" style="padding:4px 8px;font-size:.65rem" onclick="resetGame()">RESET</button></div>
 </div>
 <div class="main">
-<div class="panel"><div class="tabs"><div class="tab active" data-tab="sectors">SECTORS</div><div class="tab" data-tab="command">COMMAND</div><div class="tab" data-tab="store">STORE</div></div><div class="panel-b" id="leftPanel"></div></div>
+<div class="panel"><div class="tabs"><div class="tab active" data-tab="sectors">SECTORS</div><div class="tab" data-tab="command">COMMAND</div><div class="tab" data-tab="store">STORE</div><div class="tab" data-tab="build">BUILD</div></div><div class="panel-b" id="leftPanel"></div></div>
 <div class="center">
 <div class="mission-h"><div><div id="missionTitle" style="font-weight:700;font-size:.9rem">Command Centre Online</div><div id="missionSub" style="font-size:.65rem;color:var(--muted)">Select a sector to deploy</div></div><div id="missionPhase" style="font-size:.65rem;background:var(--panel2);padding:3px 8px;border-radius:10px;color:var(--accent)">OUTPOST</div></div>
 <div class="battlefield" id="battlefield"><div><div class="side-title">Your Forces</div><div id="playerSide"><div class="empty">Deploy a squad</div></div></div><div><div class="side-title">Hostiles — Vorrh</div><div id="enemySide"><div class="empty">No contacts</div></div></div></div>
-<div class="action-bar"><button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button><button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button><button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button><button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button></div>
+<div class="action-bar"><button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button><button class="btn" id="btnTravel" onclick="openTravel()">TRAVEL</button><button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button><button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button><button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button></div>
 </div>
 <div class="panel"><div class="tabs"><div class="tab active" data-tab="squad">SQUAD</div><div class="tab" data-tab="vehicles">VEHICLES</div><div class="tab" data-tab="tx">COMMS</div></div><div class="panel-b" id="rightPanel"></div></div>
 </div></div>
@@ -216,6 +216,15 @@ const WEAPONS_STORE=[
 {id:'w4',name:'M27B',dmg:32,effect:'pierce',cost:55,img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/b-ea_orig.png',desc:'High-velocity penetrator'},
 {id:'w5',name:'Sanity Anchor',dmg:10,effect:'san+12',cost:35,img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/m5_orig.png',desc:'Stabilizes the mind under fire'}
 ];
+
+const BUILDINGS_DEF = [
+  {id:'barracks', name:'Barracks', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/eclaf_orig.jpg', cost:{scrap:40}, time:15, desc:'Recruit and organize infantry. Enables squad management.'},
+  {id:'medbay', name:'Medbay', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/uoeso_orig.jpg', cost:{scrap:35,bio:10}, time:12, desc:'Heal wounded units and restore sanity.'},
+  {id:'forge', name:'Forge', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/almta_orig.jpg', cost:{scrap:50}, time:18, desc:'Produce weapons and vehicle parts.'},
+  {id:'lab', name:'Research Lab', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/image-2026-07-21t212042-276_orig.jpg', cost:{scrap:30,void:8}, time:20, desc:'Unlock research and improve tech.'},
+  {id:'sanctuary', name:'Sanctuary', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/i5sgx_orig.jpg', cost:{bio:20,void:6}, time:16, desc:'Mental fortification. Reduces sanity loss.'}
+];
+
 const SECTORS=[
 {id:'alpha',name:'Alpha Ridge',status:'secured',unlocked:true,threat:1,desc:'Landing zone.'},
 {id:'bravo',name:'Bravo Basin',status:'contested',unlocked:true,threat:2,desc:'Resource-rich lowlands.'},
@@ -330,6 +339,30 @@ el.innerHTML=`${w.img?`<img src="${w.img}">`:'<div style="width:48px;height:34px
 el.onclick=()=>showWeaponDetail(w);p.appendChild(el);});
 
 }}
+
+} else if(tab==='build'){
+  p.innerHTML='<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">OUTPOST CONSTRUCTION</div>';
+  BUILDINGS_DEF.forEach(b=>{
+    const owned = (state.buildings||[]).find(x=>x.id===b.id);
+    const el = document.createElement('div');
+    el.className = 'store-item';
+    if(owned){
+      if(owned.building){
+        const left = Math.max(0, Math.ceil((owned.readyAt - Date.now())/1000));
+        el.innerHTML = `<img src="${b.img}" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>${b.name}</strong><small>Building... ${left}s</small></div><div class="store-cost">⏳</div>`;
+      } else {
+        el.innerHTML = `<img src="${b.img}" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>${b.name}</strong><small>ONLINE — Click to use</small></div><div class="store-cost" style="color:var(--ok)">✓</div>`;
+        el.onclick = ()=>useBuilding(b.id);
+      }
+    } else {
+      const costStr = Object.entries(b.cost).map(([k,v])=>v+(k==='scrap'?'⚙️':k==='bio'?'🧬':'💎')).join(' ');
+      el.innerHTML = `<img src="${b.img}" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>${b.name}</strong><small>${b.desc}<br>Time: ${b.time}s</small></div><div class="store-cost">${costStr}</div>`;
+      el.onclick = ()=>startBuild(b);
+    }
+    p.appendChild(el);
+  });
+}
+
 function renderRight(tab){
 const p=document.getElementById('rightPanel');
 if(tab==='squad'){p.innerHTML='';const squad=getCurrentSquad();
@@ -428,7 +461,13 @@ function enemyTurn(){const livingE=state.enemies.filter(e=>e.hp>0),livingU=getCu
 const atk=livingE[Math.floor(Math.random()*livingE.length)],tgt=livingU[Math.floor(Math.random()*livingU.length)];
 const dmg=atk.dmg+Math.floor(Math.random()*4)-1;tgt.hp=Math.max(0,tgt.hp-dmg);
 state.sanity=Math.max(0,state.sanity-(state.leader?.bonus==='Hardened'?Math.floor(atk.sanDmg*.6):atk.sanDmg));
-toast(`${atk.name} hits ${tgt.name} (−${dmg})`,'danger');if(tgt.hp<=0)toast(`${tgt.name} is down!`,'danger');
+toast(`${atk.name} hits ${tgt.name} (−${dmg})`,'danger');
+  if(tgt.hp<=0){
+    toast(`${tgt.name} is down!`,'danger');
+    // death flash
+    showDetail('UNIT DOWN',`<div style="text-align:center"><img src="${tgt.img}" style="width:90px;height:90px;object-fit:contain;filter:grayscale(1);opacity:0.6;margin-bottom:8px"><div style="color:var(--danger);font-weight:700;font-size:1.1rem">${tgt.name}</div><div style="color:var(--muted);margin-top:4px">Killed in action</div></div>`,
+      [{text:'Continue',action:closeDetail}]);
+  }
 if(livingU.every(u=>u.hp<=0))endCombat(false);renderBattlefield();renderRight('squad');updateRes();}
 function endTurn(){if(state.phase!=='combat')return;getCurrentSquad().forEach(u=>u.acted=false);
 state.enemies.filter(e=>e.hp>0).forEach(()=>{if(Math.random()<.65)enemyTurn();});state.turn++;state.retreatedThisTurn=false;
@@ -529,6 +568,119 @@ showDetail(u.name,`<img src="${u.img}" style="width:110px;height:110px;object-fi
 function equipW(uid,wid,source){const list=source==='pool'?state.pool:getCurrentSquad();const u=list.find(x=>x.id===uid);const w=state.weapons.find(x=>x.id===wid);if(!u||!w)return;
 if(u.weapon)state.weapons.push(u.weapon);u.weapon=w;state.weapons=state.weapons.filter(x=>x.id!==wid);toast(`${u.name} equipped ${w.name}`,'ok');closeDetail();renderRight('squad');}
 function recallUnit(id){const squad=getCurrentSquad();const idx=squad.findIndex(u=>u.id===id);if(idx<0)return;const u=squad.splice(idx,1)[0];u.sector=null;state.pool.push(u);toast(`${u.name} recalled`,'ok');closeDetail();renderAll();}
+
+
+function startBuild(b){
+  if(!state.buildings) state.buildings=[];
+  if(state.buildings.find(x=>x.id===b.id)) {toast('Already built or building','warn');return;}
+  for(const [k,v] of Object.entries(b.cost)){
+    if((state[k]||0) < v){toast('Not enough resources','warn');return;}
+  }
+  for(const [k,v] of Object.entries(b.cost)) state[k]-=v;
+  state.buildings.push({id:b.id, building:true, readyAt: Date.now()+b.time*1000});
+  toast(`Construction started: ${b.name}`,'ok');
+  updateRes(); renderLeft('build'); saveGame();
+  // finish later
+  setTimeout(()=>{
+    const bb = state.buildings.find(x=>x.id===b.id);
+    if(bb){ bb.building=false; delete bb.readyAt; toast(`${b.name} complete!`,'ok'); renderLeft('build'); saveGame(); }
+  }, b.time*1000);
+}
+function useBuilding(id){
+  if(id==='barracks'){
+    showDetail('Barracks',`
+      <img src="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/eclaf_orig.jpg" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px">
+      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">Recruit infantry or organize squads.</div>
+    `,[
+      {text:'Recruit Rifleman (25⚙️)', action:()=>{closeDetail();recruitUnit('rifle');}},
+      {text:'Recruit Mark-3 (85⚙️)', action:()=>{closeDetail();buyMark3();}},
+      {text:'Close', action:closeDetail}
+    ]);
+  } else if(id==='medbay'){
+    showDetail('Medbay',`
+      <img src="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/uoeso_orig.jpg" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px">
+      Heal all wounded units at outpost for 15 Bio.
+    `,[
+      {text:'Heal All (15🧬)', action:()=>{
+        closeDetail();
+        if(state.bio<15){toast('Need 15 Bio','warn');return;}
+        state.bio-=15;
+        state.pool.forEach(u=>{u.hp=u.maxHp;u.san=Math.min(u.maxSan,u.san+20);u.status='stable';});
+        toast('All outpost units healed','ok'); updateRes(); saveGame();
+      }},
+      {text:'Close', action:closeDetail}
+    ]);
+  } else if(id==='forge'){
+    showDetail('Forge','Produce weapons and vehicles.',[
+      {text:'Open Store', action:()=>{closeDetail(); document.querySelectorAll('.tab').forEach(t=>{if(t.dataset.tab==='store')t.click();});}},
+      {text:'Close', action:closeDetail}
+    ]);
+  } else if(id==='lab'){
+    showDetail('Research Lab','Research improves your forces over time. (+5 Scrap next victory)',[
+      {text:'Close', action:closeDetail}
+    ]);
+  } else if(id==='sanctuary'){
+    showDetail('Sanctuary','Mental fortification active. Sanity loss reduced.',[
+      {text:'Close', action:closeDetail}
+    ]);
+  }
+}
+function recruitUnit(type){
+  if(state.scrap<25){toast('Need 25 Scrap','warn');return;}
+  state.scrap-=25;
+  const s = SOLDIERS[0];
+  state.pool.push({
+    id:'r'+Date.now(), name:'Rifleman '+Math.floor(Math.random()*90+10), rank:'Private', role:'Rifle',
+    img:s.img, hp:80, maxHp:80, san:70, maxSan:70, weapon:null, status:'stable', acted:false, sector:null
+  });
+  toast('Rifleman recruited','ok'); updateRes(); renderRight('squad'); saveGame();
+}
+
+
+function openTravel(){
+  const unlocked = state.sectors.filter(s=>s.unlocked);
+  let body = '<div style="font-size:.8rem;color:var(--muted);margin-bottom:10px">Select destination sector. Travel takes a moment.</div>';
+  unlocked.forEach(s=>{
+    body += `<button class="btn" style="width:100%;margin-top:4px" onclick="doTravel('${s.id}')">${s.name} ${s.id===state.currentSector?'(current)':''}</button>`;
+  });
+  showDetail('Ship Travel', body, [{text:'Cancel', action:closeDetail}]);
+}
+function doTravel(id){
+  if(id===state.currentSector){toast('Already here','warn');return;}
+  closeDetail();
+  // Travel animation modal
+  showDetail('In Transit', `
+    <div style="text-align:center;padding:20px 0">
+      <div style="font-size:2rem;margin-bottom:12px">🚀</div>
+      <div style="font-size:.9rem;margin-bottom:8px">Leaving orbit...</div>
+      <div class="atk-bar"><div class="atk-fill" id="travelBar" style="width:0%"></div></div>
+      <div id="travelLog" style="font-size:.8rem;color:var(--muted);margin-top:8px">Plotting course</div>
+    </div>
+  `, []);
+  const bar = document.getElementById('travelBar');
+  const log = document.getElementById('travelLog');
+  const steps = [
+    {pct:25, text:'Leaving atmosphere...'},
+    {pct:50, text:'Entering transit corridor...'},
+    {pct:75, text:'Approaching destination...'},
+    {pct:100, text:'Landing sequence'}
+  ];
+  let i=0;
+  function step(){
+    if(i>=steps.length){
+      selectSector(id);
+      closeDetail();
+      toast('Arrived at '+(state.sectors.find(s=>s.id===id)||{}).name,'ok');
+      saveGame();
+      return;
+    }
+    bar.style.width = steps[i].pct+'%';
+    log.textContent = steps[i].text;
+    i++;
+    setTimeout(step, 700);
+  }
+  setTimeout(step, 400);
+}
 
 function showWeaponDetail(w){
   const cost = state.leader?.bonus==='Tactical' ? Math.floor(w.cost*0.8) : w.cost;
