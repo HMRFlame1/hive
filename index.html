@@ -23,7 +23,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .leader-card{background:var(--panel);border:2px solid var(--border);border-radius:11px;padding:9px;cursor:pointer;transition:all .25s}
 .leader-card:hover{border-color:var(--accent);transform:translateY(-4px);box-shadow:0 8px 22px rgba(0,229,160,.2)}
 .leader-card.selected{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,160,.35)}
-.leader-card img{width:100%;height:110px;object-fit:contain;border-radius:7px;background:#0a0c12;margin-bottom:5px}
+.leader-card img{width:100%;height:160px;object-fit:contain;border-radius:8px;background:#0a0c12;margin-bottom:6px}
 .leader-card h3{font-size:.85rem}.leader-card .rank{font-size:.65rem;color:var(--accent)}
 .start-btn{background:linear-gradient(135deg,#00e5a0,#00b4d8);color:#04120e;border:none;padding:12px 36px;font-size:.95rem;font-weight:800;border-radius:9px;cursor:pointer}
 .start-btn:disabled{opacity:.35;cursor:not-allowed}
@@ -51,7 +51,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .unit-card:hover{border-color:var(--accent);transform:scale(1.02)}
 .unit-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,160,.3)}
 .unit-card.acted{opacity:.5;filter:grayscale(.4)}
-.unit-card img{width:40px;height:40px;object-fit:contain;border-radius:4px;background:#0a0c12}
+.unit-card img{width:56px;height:56px;object-fit:contain;border-radius:6px;background:#0a0c12}
 .unit-name{font-weight:700;font-size:.75rem}.unit-role{font-size:.6rem;color:var(--muted)}
 .bar{height:4px;background:#1a2030;border-radius:2px;overflow:hidden;margin-top:2px}
 .bar-fill{height:100%;border-radius:2px;transition:width .35s}
@@ -64,7 +64,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .combat-card:hover{border-color:var(--accent)}.combat-card.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,160,.3)}
 .combat-card.enemy{border-color:#5c1a1a;background:#140c0e}.combat-card.enemy:hover{border-color:var(--danger)}
 .combat-card.dead{opacity:.3;filter:grayscale(.8);pointer-events:none}.combat-card.acted{opacity:.5}
-.combat-card img{width:36px;height:36px;object-fit:contain;border-radius:4px;background:#0a0c12}
+.combat-card img{width:52px;height:52px;object-fit:contain;border-radius:5px;background:#0a0c12}
 .action-bar{padding:8px 11px;border-top:1px solid var(--border);display:flex;gap:6px;flex-wrap:wrap;background:var(--panel)}
 .btn{background:var(--panel2);border:1px solid var(--border);color:var(--text);padding:7px 11px;border-radius:6px;font-weight:600;font-size:.75rem;cursor:pointer}
 .btn:hover:not(:disabled){border-color:var(--accent)}.btn:disabled{opacity:.35;cursor:not-allowed}
@@ -76,12 +76,14 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes sweep{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 .radar-blip{position:absolute;width:6px;height:6px;background:var(--danger);border-radius:50%;box-shadow:0 0 5px var(--danger)}
 .veh-card{background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:6px;margin-bottom:5px;display:flex;gap:6px;align-items:center;cursor:pointer}
-.veh-card:hover{border-color:var(--accent)}.veh-card img{width:42px;height:30px;object-fit:contain}.veh-card.deployed{border-color:var(--ok)}
+.veh-card:hover{border-color:var(--accent)}.veh-card img{width:64px;height:44px;object-fit:contain}.veh-card.deployed{border-color:var(--ok)}
 .tx-item{background:var(--panel2);border-left:3px solid var(--accent2);padding:6px 8px;margin-bottom:4px;border-radius:0 5px 5px 0;font-size:.7rem}
 .tx-item.danger{border-left-color:var(--danger)}.tx-item.warn{border-left-color:var(--warn)}.tx-time{font-size:.58rem;color:var(--muted)}
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);display:none;align-items:center;justify-content:center;z-index:600;padding:12px}
 .overlay.active{display:flex}
-.modal{background:var(--panel);border:1px solid var(--border);border-radius:11px;max-width:500px;width:100%;padding:18px;max-height:90vh;overflow-y:auto}
+.modal{background:var(--panel);border:1px solid var(--border);border-radius:11px;max-width:500px;width:100%;padding:18px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-close{position:absolute;top:10px;right:12px;width:32px;height:32px;border:none;background:var(--panel2);color:var(--muted);font-size:1.3rem;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:5}
+.modal-close:hover{background:var(--danger);color:#fff}
 .modal h2{font-size:1.1rem;margin-bottom:3px}.modal-sub{color:var(--muted);font-size:.8rem;margin-bottom:10px;line-height:1.45}
 .atk-stage{text-align:center;margin:10px 0}
 .atk-portraits{display:flex;justify-content:center;align-items:center;gap:16px;margin-bottom:8px}
@@ -91,13 +93,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes hitFlash{0%{filter:brightness(1)}30%{filter:brightness(2.2) drop-shadow(0 0 14px #ff3b5c)}100%{filter:brightness(1)}}
 .atk-vs{font-size:1.4rem;font-weight:900;color:var(--danger);text-shadow:0 0 12px rgba(255,59,92,.6)}
 .atk-bar{height:11px;background:#1a2030;border-radius:5px;overflow:hidden;margin:10px 0;border:1px solid var(--border)}
-.atk-fill{height:100%;width:0%;background:linear-gradient(90deg,#00e5a0,#00b4d8,#ff3b5c);transition:width .1s linear;box-shadow:0 0 8px rgba(0,229,160,.5)}
+.atk-fill{height:100%;width:0%;background:linear-gradient(90deg,#00e5a0,#00b4d8,#ff3b5c);transition:width 0.9s linear;box-shadow:0 0 8px rgba(0,229,160,.5)}
 .atk-log{font-size:.88rem;min-height:44px;color:var(--text);font-weight:600}
 .atk-dmg{font-size:1.5rem;font-weight:900;color:var(--danger);text-shadow:0 0 10px rgba(255,59,92,.5);opacity:0;transition:opacity .3s}
 .atk-dmg.show{opacity:1}
 .store-item{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:6px;display:flex;gap:8px;align-items:center;cursor:pointer;transition:all .2s}
 .store-item:hover{border-color:var(--accent);transform:scale(1.02)}
-.store-item img{width:48px;height:34px;object-fit:contain;background:#0a0c12;border-radius:3px}
+.store-item img{width:72px;height:52px;object-fit:contain;background:#0a0c12;border-radius:5px}
 .store-info{flex:1}.store-info strong{display:block;font-size:.8rem}.store-info small{color:var(--muted);font-size:.65rem}
 .store-cost{color:var(--accent);font-weight:700;font-size:.8rem}
 .bio-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:8px 0;text-align:left}
@@ -159,7 +161,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="topbar">
 <img class="logo-small" src="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/1hive_orig.png" alt="HIVE">
 <div class="res"><div class="res-item">⚙️ <span id="resScrap">0</span></div><div class="res-item">🧬 <span id="resBio">0</span></div><div class="res-item">💎 <span id="resVoid">0</span></div></div>
-<div class="commander-info"><span id="cmdName">—</span><div class="sanity-bar"><div class="sanity-fill" id="cmdSanity" style="width:100%"></div></div></div>
+<div class="commander-info"><span id="cmdName">—</span><div class="sanity-bar"><div class="sanity-fill" id="cmdSanity" style="width:100%"></div></div>
+  <button class="btn" style="padding:4px 8px;font-size:.65rem" onclick="saveGame()">SAVE</button>
+  <button class="btn danger" style="padding:4px 8px;font-size:.65rem" onclick="resetGame()">RESET</button></div>
 </div>
 <div class="main">
 <div class="panel"><div class="tabs"><div class="tab active" data-tab="sectors">SECTORS</div><div class="tab" data-tab="command">COMMAND</div><div class="tab" data-tab="store">STORE</div></div><div class="panel-b" id="leftPanel"></div></div>
@@ -210,7 +214,7 @@ const WEAPONS_STORE=[
 {id:'w2',name:'Grinder',dmg:28,effect:'bleed',cost:45,img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/212_orig.png',desc:'Shreds organic armour'},
 {id:'w3',name:'PulseStopper',dmg:22,effect:'stun',cost:40,img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/213_orig.png',desc:'Disrupts Vorrh signals'},
 {id:'w4',name:'M27B',dmg:32,effect:'pierce',cost:55,img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/b-ea_orig.png',desc:'High-velocity penetrator'},
-{id:'w5',name:'Sanity Anchor',dmg:10,effect:'san+12',cost:35,img:'',desc:'Stabilizes the mind'}
+{id:'w5',name:'Sanity Anchor',dmg:10,effect:'san+12',cost:35,img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/m5_orig.png',desc:'Stabilizes the mind under fire'}
 ];
 const SECTORS=[
 {id:'alpha',name:'Alpha Ridge',status:'secured',unlocked:true,threat:1,desc:'Landing zone.'},
@@ -220,7 +224,38 @@ const SECTORS=[
 {id:'echo',name:'Echo Depths',status:'locked',unlocked:false,threat:4,desc:'Deep hive tunnels.'},
 {id:'foxtrot',name:'Foxtrot Gate',status:'locked',unlocked:false,threat:5,desc:'Suspected Vorrh command node.'}
 ];
-let state={leader:null,scrap:100,bio:40,void:15,sanity:100,pool:[],sectorSquads:{},weapons:[],vehicles:[],sectors:JSON.parse(JSON.stringify(SECTORS)),currentSector:null,phase:'outpost',selectedUnit:null,enemies:[],mission:0,turn:0,retreatedThisTurn:false,trapped:false,transmissions:[],radarContacts:[]};
+let state={leader:null,scrap:100,bio:40,void:15,sanity:100,pool:[],sectorSquads:{},weapons:[],vehicles:[],buildings:[],squads:[],sectors:JSON.parse(JSON.stringify(SECTORS)),currentSector:null,phase:'outpost',selectedUnit:null,enemies:[],mission:0,turn:0,retreatedThisTurn:false,trapped:false,transmissions:[],radarContacts:[],lastScan:0,namedSquads:{}};
+
+function saveGame(){
+  try{
+    const data = JSON.stringify(state);
+    localStorage.setItem('hive_save', data);
+    toast('Game saved','ok');
+  }catch(e){toast('Save failed','warn');}
+}
+function loadGame(){
+  try{
+    const raw = localStorage.getItem('hive_save');
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    Object.assign(state, data);
+    if(state.leader){
+      document.getElementById('titleScreen').classList.remove('active');
+      document.getElementById('game').classList.add('active');
+      document.getElementById('cmdName').textContent = state.leader.rank+' '+state.leader.name+' '+state.leader.last;
+      renderAll();
+      toast('Game loaded','ok');
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+function resetGame(){
+  if(!confirm('Reset all progress? This cannot be undone.')) return;
+  localStorage.removeItem('hive_save');
+  location.reload();
+}
+
 
 function init(){
 const grid=document.getElementById('leaderGrid');
@@ -241,7 +276,7 @@ if(side==='leftPanel')renderLeft(tab.dataset.tab);else renderRight(tab.dataset.t
 }
 function showLeaderDossier(l){
 showDetail(`${l.rank} ${l.name} ${l.last}`,`
-<img src="${l.img}" style="width:85px;height:85px;object-fit:contain;border-radius:7px;background:#0a0c12;margin-bottom:7px">
+<img src="${l.img}" style="width:140px;height:140px;object-fit:contain;border-radius:10px;background:#0a0c12;margin-bottom:10px">
 <div class="bio-grid">
 <div class="bio-item"><div class="label">AGE</div>${l.age}</div>
 <div class="bio-item"><div class="label">HOME</div>${l.home}</div>
@@ -281,7 +316,7 @@ const p=document.getElementById('leftPanel');
 if(tab==='sectors'){p.innerHTML='<div class="sector-grid"></div>';const grid=p.querySelector('.sector-grid');
 state.sectors.forEach(s=>{const deployed=(state.sectorSquads[s.id]||[]).length;const el=document.createElement('div');
 el.className='sector'+(s.unlocked?'':' locked')+(state.currentSector===s.id?' active':'')+(s.status==='hot'?' hot':'');
-el.innerHTML=`<div class="sector-name">${s.name}</div><div class="sector-status">${s.unlocked?s.status.toUpperCase():'LOCKED'} • T${s.threat}</div>${deployed?`<div class="sector-deployed">${deployed} deployed</div>`:''}`;
+el.innerHTML=`<div class="sector-name">${s.name}</div><div class="sector-status">${s.unlocked?s.status.toUpperCase():'LOCKED'} • T${s.threat}</div>${deployed?`<div class="sector-deployed">${(state.namedSquads&&state.namedSquads[s.id])||'Squad'} • ${deployed}</div>`:''}`;
 if(s.unlocked)el.onclick=()=>selectSector(s.id);grid.appendChild(el);});
 }else if(tab==='command'){p.innerHTML=`<div class="radar-box"><div class="radar-circle" id="radarCircle"><div class="radar-sweep"></div></div><div style="font-size:.7rem;color:var(--muted)">RADAR — LIVE</div>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:5px"><div class="btn" style="font-size:.62rem;padding:5px" onclick="viewCam('N')">N</div><div class="btn" style="font-size:.62rem;padding:5px" onclick="viewCam('E')">E</div><div class="btn" style="font-size:.62rem;padding:5px" onclick="viewCam('S')">S</div><div class="btn" style="font-size:.62rem;padding:5px" onclick="viewCam('W')">W</div></div></div>
@@ -292,7 +327,8 @@ m3.innerHTML=`<img src="${MARK3.img}"><div class="store-info"><strong>${MARK3.na
 m3.onclick=buyMark3;p.appendChild(m3);
 WEAPONS_STORE.forEach(w=>{const el=document.createElement('div');el.className='store-item';
 el.innerHTML=`${w.img?`<img src="${w.img}">`:'<div style="width:48px;height:34px;background:#0a0c12;border-radius:3px"></div>'}<div class="store-info"><strong>${w.name}</strong><small>DMG ${w.dmg} • ${w.effect}<br>${w.desc}</small></div><div class="store-cost">${w.cost}⚙️</div>`;
-el.onclick=()=>buyWeapon(w);p.appendChild(el);});
+el.onclick=()=>showWeaponDetail(w);p.appendChild(el);});
+
 }}
 function renderRight(tab){
 const p=document.getElementById('rightPanel');
@@ -302,7 +338,7 @@ if(state.pool.length){const h=document.createElement('div');h.style.cssText='fon
 state.pool.forEach(u=>{const el=makeUnitCard(u);el.onclick=()=>openUnit(u.id,'pool');p.appendChild(el);});}
 if(squad.length){const h=document.createElement('div');h.style.cssText='font-size:.65rem;color:var(--accent);margin:7px 0 3px';h.textContent=`DEPLOYED — ${(state.sectors.find(s=>s.id===state.currentSector)||{}).name||'SECTOR'}`;p.appendChild(h);
 squad.forEach(u=>{const el=makeUnitCard(u);el.onclick=()=>openUnit(u.id,'sector');p.appendChild(el);});}
-}else if(tab==='vehicles'){p.innerHTML='';if(!state.vehicles.length){p.innerHTML='<div class="empty">No vehicles</div>';VEHICLES.slice(0,2).forEach(v=>{const el=document.createElement('div');el.className='veh-card';el.innerHTML=`<img src="${v.img}"><div><strong style="font-size:.75rem">${v.name}</strong><div style="font-size:.6rem;color:var(--muted)">${v.cost}⚙️</div></div>`;el.onclick=()=>buyVehicle(v);p.appendChild(el);});}
+}else if(tab==='vehicles'){p.innerHTML='';if(!state.vehicles.length){p.innerHTML='<div class="empty">No vehicles</div>';VEHICLES.slice(0,2).forEach(v=>{const el=document.createElement('div');el.className='veh-card';el.innerHTML=`<img src="${v.img}"><div><strong style="font-size:.75rem">${v.name}</strong><div style="font-size:.6rem;color:var(--muted)">${v.cost}⚙️</div></div>`;el.onclick=()=>showVehicleDetail(v);p.appendChild(el);});}
 else{state.vehicles.forEach(v=>{const el=document.createElement('div');el.className='veh-card'+(v.deployed?' deployed':'');el.innerHTML=`<img src="${v.img}"><div><strong style="font-size:.75rem">${v.name}</strong><div style="font-size:.6rem;color:var(--muted)">${v.deployed?'DEPLOYED':'Available'}</div></div>`;el.onclick=()=>{v.deployed=!v.deployed;toast(v.deployed?v.name+' deployed':v.name+' recalled','ok');renderRight('vehicles');};p.appendChild(el);});}
 }else if(tab==='tx'){p.innerHTML='';if(!state.transmissions.length)p.innerHTML='<div class="empty">No transmissions</div>';
 state.transmissions.slice().reverse().forEach(t=>{const el=document.createElement('div');el.className='tx-item '+(t.type||'');el.innerHTML=`<div class="tx-time">${t.from} — ${t.time}</div>${t.msg}`;p.appendChild(el);});}
@@ -332,9 +368,18 @@ function tryDeploy(){
 if(!state.currentSector){toast('Select a sector first','warn');return;}
 if(!state.sectorSquads[state.currentSector]||!state.sectorSquads[state.currentSector].length){
 if(!state.pool.length){toast('No units available at outpost','danger');return;}
+// Name the squad
+const names = ['Alpha','Bravo','Charlie','Delta','Echo','Foxtrot','Golf','Hotel'];
+const used = Object.values(state.namedSquads||{});
+const available = names.filter(n=>!used.includes(n));
+const squadName = available[0] || ('Squad-'+Date.now().toString().slice(-4));
 const toDeploy=state.pool.splice(0,Math.min(4,state.pool.length));
 toDeploy.forEach(u=>{u.sector=state.currentSector;u.acted=false;});
-state.sectorSquads[state.currentSector]=toDeploy;toast(`Deployed ${toDeploy.length} units`,'ok');
+state.sectorSquads[state.currentSector]=toDeploy;
+if(!state.namedSquads) state.namedSquads={};
+state.namedSquads[state.currentSector]=squadName;
+toast(`Squad ${squadName} deployed (${toDeploy.length} units)`,'ok');
+saveGame();
 }
 const squad=getCurrentSquad().filter(u=>u.hp>0);if(!squad.length){toast('No living units in this sector','danger');return;}
 if(Math.random()<0.2&&state.mission>0){addTx('Unknown','Command... we found— ████ *screaming*','danger');
@@ -354,7 +399,7 @@ addTx('Squad',`Contact in ${sector?.name}. ${count} Vorrh.`,'warn');toast(`Engag
 }
 function performAttack(unitId,enemyIdx){
 const squad=getCurrentSquad();const unit=squad.find(u=>u.id===unitId);const enemy=state.enemies[enemyIdx];
-if(!unit||!enemy||unit.hp<=0||enemy.hp<=0)return;if(unit.acted){toast(unit.name+' already acted','warn');return;}
+if(!unit||!enemy||unit.hp<=0||enemy.hp<=0){toast('Unit is down or invalid','warn');return;}if(unit.acted){toast(unit.name+' already acted','warn');return;}
 const finalDmg=Math.max(1,(unit.weapon?unit.weapon.dmg:10)+Math.floor(Math.random()*6)-2);
 document.getElementById('atkUnitImg').src=unit.img;document.getElementById('atkEnemyImg').src=enemy.img;
 document.getElementById('atkNames').textContent=`${unit.name} → ${enemy.name}`;document.getElementById('atkTitle').textContent='WEAPON DISCHARGE';
@@ -362,7 +407,13 @@ document.getElementById('atkLog').textContent='Target acquisition...';document.g
 document.getElementById('atkDmg').textContent='';document.getElementById('atkDmg').classList.remove('show');
 document.getElementById('atkOverlay').classList.add('active');
 const unitImg=document.getElementById('atkUnitImg'),enemyImg=document.getElementById('atkEnemyImg'),bar=document.getElementById('atkBar'),log=document.getElementById('atkLog'),dmgEl=document.getElementById('atkDmg');
-const stages=[{pct:18,text:'Lock confirmed. Chambering...',delay:480},{pct:42,text:'Firing solution locked...',delay:420},{pct:68,text:'DISCHARGING',delay:380,shake:true},{pct:100,text:`IMPACT — ${finalDmg} DAMAGE`,delay:580,hit:true}];
+const stages=[
+  {pct:15,text:'Target acquisition...',delay:800},
+  {pct:35,text:'Weapon cycling...',delay:900},
+  {pct:55,text:'Firing solution locked',delay:1000},
+  {pct:75,text:'DISCHARGING',delay:900,shake:true},
+  {pct:100,text:`IMPACT — ${finalDmg} DAMAGE`,delay:1400,hit:true}
+];
 let i=0;function next(){if(i>=stages.length){enemy.hp-=finalDmg;unit.acted=true;state.selectedUnit=null;
 if(unit.weapon?.effect==='san+12')unit.san=Math.min(unit.maxSan,unit.san+8);
 if(enemy.hp<=0){state.scrap+=10+Math.floor(Math.random()*10);state.bio+=4;if(Math.random()<.18)state.void+=1;if(Math.random()<.14)unlockNextSector();}
@@ -382,13 +433,35 @@ if(livingU.every(u=>u.hp<=0))endCombat(false);renderBattlefield();renderRight('s
 function endTurn(){if(state.phase!=='combat')return;getCurrentSquad().forEach(u=>u.acted=false);
 state.enemies.filter(e=>e.hp>0).forEach(()=>{if(Math.random()<.65)enemyTurn();});state.turn++;state.retreatedThisTurn=false;
 state.sanity=Math.max(0,state.sanity-2);updateRes();renderBattlefield();renderRight('squad');toast('New turn — units ready','ok');}
-function endCombat(victory){state.phase='outpost';state.enemies=[];state.selectedUnit=null;
-document.getElementById('missionPhase').textContent='OUTPOST';document.getElementById('btnDeploy').style.display='inline-block';
-document.getElementById('btnEndTurn').style.display='none';document.getElementById('btnRetreat').style.display='none';document.getElementById('btnExtract').style.display='none';
-if(victory){state.scrap+=28;state.bio+=10;addTx('Command','Sector secured.','ok');toast('Sector secured','ok');
-const s=state.sectors.find(x=>x.id===state.currentSector);if(s)s.status='secured';if(Math.random()<.38)unlockNextSector();}
-else{addTx('Command','Forced extraction.','danger');state.sanity=Math.max(10,state.sanity-12);toast('Forced retreat','danger');}
-renderAll();}
+function endCombat(victory){
+  state.phase='outpost';state.enemies=[];state.selectedUnit=null;
+  document.getElementById('missionPhase').textContent='OUTPOST';
+  document.getElementById('btnDeploy').style.display='inline-block';
+  document.getElementById('btnEndTurn').style.display='none';
+  document.getElementById('btnRetreat').style.display='none';
+  document.getElementById('btnExtract').style.display='none';
+  const squad = getCurrentSquad();
+  const living = squad.filter(u=>u.hp>0);
+  if(living.length===0 && squad.length>0){
+    showDetail('SQUAD WIPED',`All units in this sector have been lost. The Vorrh have taken the ground.<br><br>Casualties: ${squad.map(u=>u.name).join(', ')}`,
+      [{text:'Acknowledge',action:()=>{closeDetail(); 
+        // remove dead squad from sector
+        state.sectorSquads[state.currentSector]=[];
+        renderAll(); saveGame();
+      }}]);
+    addTx('Command','Squad lost. No survivors.','danger');
+  } else if(victory){
+    state.scrap+=28;state.bio+=10;
+    addTx('Command','Sector secured.','ok');toast('Sector secured','ok');
+    const s=state.sectors.find(x=>x.id===state.currentSector);if(s)s.status='secured';
+    if(Math.random()<.38)unlockNextSector();
+  } else {
+    addTx('Command','Forced extraction. Casualties sustained.','danger');
+    state.sanity=Math.max(10,state.sanity-12);toast('Forced retreat','danger');
+  }
+  saveGame();
+  renderAll();
+}
 function retreat(){if(state.retreatedThisTurn){toast('Already attempted','warn');return;}state.retreatedThisTurn=true;
 if(state.trapped||state.enemies.filter(e=>e.hp>0).length>=4){toast('Routes cut — need transport','danger');return;}endCombat(false);}
 function callTransport(){const has=state.vehicles.some(v=>v.type==='transport');if(!has&&state.scrap<40){toast('Need APC or 40 Scrap','warn');return;}
@@ -401,25 +474,145 @@ state.pool.push({id:'m3_'+Date.now(),name:MARK3.name,rank:MARK3.rank,role:MARK3.
 toast('Mark-3 Heavy acquired','ok');updateRes();renderLeft('store');renderRight('squad');}
 function buyVehicle(v){if(state.scrap<v.cost){toast('Not enough Scrap','warn');return;}state.scrap-=v.cost;state.vehicles.push({...v,deployed:false});toast(`Acquired ${v.name}`,'ok');updateRes();renderRight('vehicles');}
 function addTx(from,msg,type=''){const now=new Date();state.transmissions.push({from,msg,type,time:now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')});if(state.transmissions.length>25)state.transmissions.shift();}
-function runScan(){const n=1+Math.floor(Math.random()*3);state.radarContacts=Array.from({length:n},()=>({x:20+Math.random()*60,y:20+Math.random()*60}));updateRadarBlips();addTx('Radar',`${n} signatures.`,'warn');toast(`Radar: ${n} contacts`,'warn');
-if(Math.random()<.28){const msgs=[{from:'Outpost 7',msg:'They are inside— *screaming* ████',type:'danger'},{from:'Scout',msg:'Movement in the fog. Multiple.',type:'warn'},{from:'Unknown',msg:'...the song is beautiful...',type:'danger'}];const m=msgs[Math.floor(Math.random()*msgs.length)];addTx(m.from,m.msg,m.type);}}
+function runScan(){
+  const now = Date.now();
+  const cd = 120000; // 2 minutes
+  if(state.lastScan && now - state.lastScan < cd){
+    const left = Math.ceil((cd - (now - state.lastScan))/1000);
+    toast('Scan cooling down: '+left+'s','warn');
+    return;
+  }
+  state.lastScan = now;
+  // Live scan feel
+  toast('Initiating deep scan...','ok');
+  const circle = document.getElementById('radarCircle');
+  if(circle) circle.style.boxShadow = '0 0 20px var(--accent)';
+  setTimeout(()=>{
+    const n=1+Math.floor(Math.random()*4);
+    state.radarContacts=Array.from({length:n},()=>({x:15+Math.random()*70,y:15+Math.random()*70}));
+    updateRadarBlips();
+    addTx('Radar',`Deep scan complete. ${n} signatures.`,'warn');
+    toast(`Scan complete: ${n} contacts`,'warn');
+    if(circle) circle.style.boxShadow = '';
+    if(Math.random()<.3){
+      const msgs=[{from:'Outpost 7',msg:'They are inside— *screaming* ████',type:'danger'},{from:'Scout',msg:'Movement in the fog. Multiple. Large.',type:'warn'},{from:'Unknown',msg:'...the song is beautiful... do not listen...',type:'danger'}];
+      const m=msgs[Math.floor(Math.random()*msgs.length)];
+      addTx(m.from,m.msg,m.type);
+    }
+    saveGame();
+    updateScanButton();
+  }, 1800);
+}
+function updateScanButton(){
+  const btn = document.querySelector('button[onclick="runScan()"]');
+  if(!btn) return;
+  const now = Date.now();
+  const cd = 120000;
+  if(state.lastScan && now - state.lastScan < cd){
+    const left = Math.ceil((cd - (now - state.lastScan))/1000);
+    btn.textContent = 'SCAN READY IN '+left+'s';
+    btn.disabled = true;
+  } else {
+    btn.textContent = 'FORCE SCAN';
+    btn.disabled = false;
+  }
+}
+setInterval(updateScanButton, 1000);
+
 function updateRadarBlips(){const c=document.getElementById('radarCircle');if(!c)return;c.querySelectorAll('.radar-blip').forEach(b=>b.remove());state.radarContacts.forEach(p=>{const b=document.createElement('div');b.className='radar-blip';b.style.left=p.x+'%';b.style.top=p.y+'%';c.appendChild(b);});}
 function viewCam(dir){const events=['Static.','Movement in the treeline.','Heat signatures closing.','Clear.','A large shape passed.'];toast(`Cam ${dir}: ${events[Math.floor(Math.random()*events.length)]}`,'ok');}
 function openUnit(id,source){let u=source==='pool'?state.pool.find(x=>x.id===id):getCurrentSquad().find(x=>x.id===id);if(!u)return;
 let acts='';if(state.phase==='combat'&&!u.acted&&u.hp>0&&source==='sector')acts+=`<button class="btn primary" style="width:100%;margin-top:5px" onclick="state.selectedUnit='${u.id}';closeDetail();renderBattlefield();toast('${u.name} selected','ok')">Select for Attack</button>`;
 if(state.weapons.length){acts+=`<div style="margin-top:7px;font-size:.7rem;color:var(--muted)">Equip:</div>`;state.weapons.forEach(w=>{acts+=`<button class="btn" style="width:100%;margin-top:2px;font-size:.7rem" onclick="equipW('${u.id}','${w.id}','${source}')">${w.name} (DMG ${w.dmg})</button>`;});}
 if(source==='sector'&&state.phase==='outpost')acts+=`<button class="btn" style="width:100%;margin-top:5px" onclick="recallUnit('${u.id}')">Recall to Outpost</button>`;
-showDetail(u.name,`<img src="${u.img}" style="width:65px;height:65px;object-fit:contain;border-radius:5px;background:#0a0c12;margin-bottom:5px"><div style="font-size:.78rem;color:var(--muted)">${u.rank} • ${u.role}</div><div style="margin:6px 0">HP ${u.hp}/${u.maxHp} • Sanity ${u.san}/${u.maxSan}</div><div>Weapon: ${u.weapon?u.weapon.name:'Unarmed'}</div>${acts}`,[{text:'Close',action:closeDetail}]);}
+showDetail(u.name,`<img src="${u.img}" style="width:110px;height:110px;object-fit:contain;border-radius:8px;background:#0a0c12;margin-bottom:8px"><div style="font-size:.78rem;color:var(--muted)">${u.rank} • ${u.role}</div><div style="margin:6px 0">HP ${u.hp}/${u.maxHp} • Sanity ${u.san}/${u.maxSan}</div><div>Weapon: ${u.weapon?u.weapon.name:'Unarmed'}</div>${acts}`,[{text:'Close',action:closeDetail}]);}
 function equipW(uid,wid,source){const list=source==='pool'?state.pool:getCurrentSquad();const u=list.find(x=>x.id===uid);const w=state.weapons.find(x=>x.id===wid);if(!u||!w)return;
 if(u.weapon)state.weapons.push(u.weapon);u.weapon=w;state.weapons=state.weapons.filter(x=>x.id!==wid);toast(`${u.name} equipped ${w.name}`,'ok');closeDetail();renderRight('squad');}
 function recallUnit(id){const squad=getCurrentSquad();const idx=squad.findIndex(u=>u.id===id);if(idx<0)return;const u=squad.splice(idx,1)[0];u.sector=null;state.pool.push(u);toast(`${u.name} recalled`,'ok');closeDetail();renderAll();}
-function showDetail(title,body,choices){const box=document.getElementById('detailBox');box.innerHTML=`<h2>${title}</h2><div class="modal-sub">${body}</div><div id="detailChoices"></div>`;
+
+function showWeaponDetail(w){
+  const cost = state.leader?.bonus==='Tactical' ? Math.floor(w.cost*0.8) : w.cost;
+  showDetail(w.name, `
+    ${w.img?`<img src="${w.img}" style="width:120px;height:80px;object-fit:contain;background:#0a0c12;border-radius:6px;margin-bottom:8px">`:''}
+    <div style="font-size:.85rem;margin:6px 0"><strong>Damage:</strong> ${w.dmg} &nbsp;|&nbsp; <strong>Effect:</strong> ${w.effect}</div>
+    <div style="color:var(--muted);font-size:.8rem;margin-bottom:10px">${w.desc}</div>
+    <div style="color:var(--accent);font-weight:700">Cost: ${cost} Scrap</div>
+  `, [
+    {text:'Purchase', action:()=>{closeDetail();buyWeapon(w);}},
+    {text:'Close', action:closeDetail}
+  ]);
+}
+function showVehicleDetail(v){
+  showDetail(v.name, `
+    <img src="${v.img}" style="width:140px;height:90px;object-fit:contain;background:#0a0c12;border-radius:6px;margin-bottom:8px">
+    <div style="font-size:.85rem;margin:6px 0"><strong>Type:</strong> ${v.type}</div>
+    <div style="color:var(--muted);font-size:.8rem;margin-bottom:10px">${v.desc||'Military vehicle for field operations.'}</div>
+    <div style="color:var(--accent);font-weight:700">Cost: ${v.cost} Scrap</div>
+  `, [
+    {text:'Purchase', action:()=>{closeDetail();buyVehicle(v);}},
+    {text:'Close', action:closeDetail}
+  ]);
+}
+
+function showDetail(title,body,choices){const box=document.getElementById('detailBox');box.innerHTML=`<button class="modal-close" onclick="closeDetail()" title="Close">×</button><h2>${title}</h2><div class="modal-sub">${body}</div><div id="detailChoices"></div>`;
 const ch=document.getElementById('detailChoices');(choices||[]).forEach(c=>{const b=document.createElement('button');b.className='btn primary';b.style.cssText='width:100%;margin-top:5px';b.textContent=c.text;b.onclick=c.action;ch.appendChild(b);});
 document.getElementById('detailOverlay').classList.add('active');}
 function closeDetail(){document.getElementById('detailOverlay').classList.remove('active');}
 function toast(msg,type=''){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='.3s';setTimeout(()=>t.remove(),300);},2500);}
-setInterval(()=>{if(state.phase==='outpost'&&Math.random()<.1)runScan();},55000);
-init();
+setInterval(()=>{if(state.phase==='outpost'&&Math.random()<.08)runScan();},55000);
+
+// Background AI — other sectors evolve while you look away
+setInterval(()=>{
+  if(state.phase!=='outpost') return;
+  state.sectors.forEach(s=>{
+    if(!s.unlocked || s.id===state.currentSector) return;
+    const squad = state.sectorSquads[s.id]||[];
+    const living = squad.filter(u=>u.hp>0);
+    if(living.length===0) return;
+    // random events
+    const r = Math.random();
+    if(r < 0.08){
+      // minor contact
+      const dmg = 5 + Math.floor(Math.random()*10);
+      const tgt = living[Math.floor(Math.random()*living.length)];
+      tgt.hp = Math.max(0, tgt.hp - dmg);
+      addTx(s.name, `${tgt.name} reports contact. (−${dmg} HP)`,'warn');
+      if(tgt.hp<=0) addTx(s.name, `${tgt.name} is down!`,'danger');
+    } else if(r < 0.12){
+      // resource find
+      state.scrap += 3 + Math.floor(Math.random()*6);
+      addTx(s.name, 'Patrol recovered scrap.','ok');
+    } else if(r < 0.15 && s.status!=='secured'){
+      s.status = 'hot';
+      addTx(s.name, 'Vorrh activity rising.','warn');
+    }
+  });
+  // check for wiped squads in background
+  Object.keys(state.sectorSquads).forEach(sid=>{
+    if(sid===state.currentSector) return;
+    const sq = state.sectorSquads[sid]||[];
+    if(sq.length && sq.every(u=>u.hp<=0)){
+      addTx('Command', `Squad in ${(state.sectors.find(x=>x.id===sid)||{}).name||sid} has gone silent.`,'danger');
+      state.sectorSquads[sid]=[];
+    }
+  });
+}, 28000);
+
+
+// Try load existing save
+if(!loadGame()){
+  init();
+} else {
+  // still need tab handlers
+  document.querySelectorAll('.tabs').forEach(tabBar=>{
+    tabBar.querySelectorAll('.tab').forEach(tab=>{
+      tab.onclick=()=>{tabBar.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');
+      const side=tabBar.closest('.panel').querySelector('.panel-b').id;
+      if(side==='leftPanel')renderLeft(tab.dataset.tab);else renderRight(tab.dataset.tab);};
+    });
+  });
+}
+
 
 // PWA install + service worker
 if ('serviceWorker' in navigator) {
