@@ -112,6 +112,29 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes slideIn{from{transform:translateX(26px);opacity:0}to{transform:translateX(0);opacity:1}}
 .empty{text-align:center;color:var(--muted);padding:16px 5px;font-size:.75rem}
 
+/* Pokémon-style battle */
+.poke-battle { text-align: center; }
+.poke-field { display: flex; justify-content: space-between; align-items: flex-end; min-height: 180px; margin: 12px 0; position: relative; }
+.poke-enemy { text-align: right; flex: 1; }
+.poke-player { text-align: left; flex: 1; }
+.poke-sprite { width: 100px; height: 100px; object-fit: contain; background: #0a0c12; border-radius: 8px; transition: all 0.3s; }
+.poke-sprite.hurt { animation: pokeHurt 0.5s ease; }
+.poke-sprite.attack { animation: pokeAttack 0.4s ease; }
+.poke-sprite.faint { animation: pokeFaint 0.8s ease forwards; }
+@keyframes pokeHurt { 0%,100%{transform:translateX(0);filter:brightness(1)} 20%,60%{transform:translateX(-8px);filter:brightness(2) drop-shadow(0 0 8px #ff3b5c)} 40%{transform:translateX(8px)} }
+@keyframes pokeAttack { 0%{transform:translateX(0)} 40%{transform:translateX(20px)} 100%{transform:translateX(0)} }
+@keyframes pokeFaint { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(30px)} }
+.poke-hp-box { background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin: 4px 0; display: inline-block; min-width: 140px; text-align: left; }
+.poke-hp-box .name { font-weight: 700; font-size: 0.8rem; }
+.poke-hp-bar { height: 8px; background: #1a2030; border-radius: 4px; overflow: hidden; margin-top: 3px; }
+.poke-hp-fill { height: 100%; border-radius: 4px; transition: width 0.6s ease; }
+.poke-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 12px; }
+.poke-move { background: var(--panel2); border: 2px solid var(--border); border-radius: 8px; padding: 10px; cursor: pointer; text-align: left; font-size: 0.8rem; font-weight: 600; }
+.poke-move:hover { border-color: var(--accent); background: #1a2030; }
+.poke-move .pp { font-size: 0.65rem; color: var(--muted); }
+.poke-log { font-size: 0.85rem; min-height: 36px; margin: 8px 0; color: var(--text); font-weight: 600; }
+
+
 /* ===== PHONE / MOBILE ===== */
 @media (max-width: 900px) {
   .main {
@@ -430,33 +453,178 @@ document.getElementById('missionPhase').textContent='COMBAT';document.getElement
 document.getElementById('btnEndTurn').style.display='inline-block';document.getElementById('btnRetreat').style.display='inline-block';document.getElementById('btnExtract').style.display='inline-block';
 addTx('Squad',`Contact in ${sector?.name}. ${count} Vorrh.`,'warn');toast(`Engaging ${count} Vorrh`,'danger');renderBattlefield();renderRight('squad');
 }
-function performAttack(unitId,enemyIdx){
-const squad=getCurrentSquad();const unit=squad.find(u=>u.id===unitId);const enemy=state.enemies[enemyIdx];
-if(!unit||!enemy||unit.hp<=0||enemy.hp<=0){toast('Unit is down or invalid','warn');return;}if(unit.acted){toast(unit.name+' already acted','warn');return;}
-const finalDmg=Math.max(1,(unit.weapon?unit.weapon.dmg:10)+Math.floor(Math.random()*6)-2);
-document.getElementById('atkUnitImg').src=unit.img;document.getElementById('atkEnemyImg').src=enemy.img;
-document.getElementById('atkNames').textContent=`${unit.name} → ${enemy.name}`;document.getElementById('atkTitle').textContent='WEAPON DISCHARGE';
-document.getElementById('atkLog').textContent='Target acquisition...';document.getElementById('atkBar').style.width='0%';
-document.getElementById('atkDmg').textContent='';document.getElementById('atkDmg').classList.remove('show');
-document.getElementById('atkOverlay').classList.add('active');
-const unitImg=document.getElementById('atkUnitImg'),enemyImg=document.getElementById('atkEnemyImg'),bar=document.getElementById('atkBar'),log=document.getElementById('atkLog'),dmgEl=document.getElementById('atkDmg');
-const stages=[
-  {pct:15,text:'Target acquisition...',delay:800},
-  {pct:35,text:'Weapon cycling...',delay:900},
-  {pct:55,text:'Firing solution locked',delay:1000},
-  {pct:75,text:'DISCHARGING',delay:900,shake:true},
-  {pct:100,text:`IMPACT — ${finalDmg} DAMAGE`,delay:1400,hit:true}
-];
-let i=0;function next(){if(i>=stages.length){enemy.hp-=finalDmg;unit.acted=true;state.selectedUnit=null;
-if(unit.weapon?.effect==='san+12')unit.san=Math.min(unit.maxSan,unit.san+8);
-if(enemy.hp<=0){state.scrap+=10+Math.floor(Math.random()*10);state.bio+=4;if(Math.random()<.18)state.void+=1;if(Math.random()<.14)unlockNextSector();}
-setTimeout(()=>{document.getElementById('atkOverlay').classList.remove('active');
-if(state.enemies.every(e=>e.hp<=0))endCombat(true);else{if(Math.random()<.28)setTimeout(enemyTurn,420);renderBattlefield();renderRight('squad');updateRes();}},750);return;}
-const s=stages[i];bar.style.width=s.pct+'%';log.textContent=s.text;
-if(s.shake)unitImg.classList.add('shake');if(s.hit){enemyImg.classList.add('hit');dmgEl.textContent=`−${finalDmg}`;dmgEl.classList.add('show');}
-i++;setTimeout(()=>{unitImg.classList.remove('shake');enemyImg.classList.remove('hit');next();},s.delay);}
-setTimeout(next,320);
+
+let battleState = null; // {unit, enemyIdx, enemy}
+
+function performAttack(unitId, enemyIdx){
+  const squad = getCurrentSquad();
+  const unit = squad.find(u => u.id === unitId);
+  const enemy = state.enemies[enemyIdx];
+  if(!unit || !enemy || unit.hp <= 0 || enemy.hp <= 0){ toast('Unit is down or invalid','warn'); return; }
+  if(unit.acted){ toast(unit.name + ' already acted','warn'); return; }
+
+  battleState = { unit, enemyIdx, enemy };
+  openPokeBattle(unit, enemy);
 }
+
+function openPokeBattle(unit, enemy){
+  const moves = [
+    { name: unit.weapon ? unit.weapon.name : 'Rifle Shot', dmg: unit.weapon ? unit.weapon.dmg : 12, type: 'NORMAL' },
+    { name: 'Suppressing Fire', dmg: 8, type: 'NORMAL' },
+    { name: 'Aimed Shot', dmg: Math.floor((unit.weapon ? unit.weapon.dmg : 12) * 1.3), type: 'SPECIAL' },
+    { name: 'Fallback', dmg: 0, type: 'STATUS' }
+  ];
+
+  const box = document.getElementById('detailBox');
+  box.innerHTML = `
+    <button class="modal-close" onclick="closeDetail()" title="Close">×</button>
+    <div class="poke-battle">
+      <div class="poke-field">
+        <div class="poke-player">
+          <div class="poke-hp-box">
+            <div class="name">${unit.name}</div>
+            <div class="poke-hp-bar"><div class="poke-hp-fill hp-fill" id="pokePlayerHp" style="width:${Math.max(0,unit.hp/unit.maxHp*100)}%"></div></div>
+            <div style="font-size:0.65rem;color:var(--muted)">${unit.hp}/${unit.maxHp}</div>
+          </div>
+          <img class="poke-sprite" id="pokePlayerSprite" src="${unit.img}">
+        </div>
+        <div class="poke-enemy">
+          <div class="poke-hp-box">
+            <div class="name">${enemy.name}</div>
+            <div class="poke-hp-bar"><div class="poke-hp-fill" id="pokeEnemyHp" style="width:${Math.max(0,enemy.hp/enemy.maxHp*100)}%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div>
+            <div style="font-size:0.65rem;color:var(--muted)">${enemy.hp}/${enemy.maxHp}</div>
+          </div>
+          <img class="poke-sprite" id="pokeEnemySprite" src="${enemy.img}">
+        </div>
+      </div>
+      <div class="poke-log" id="pokeLog">What will ${unit.name} do?</div>
+      <div class="poke-moves" id="pokeMoves"></div>
+    </div>
+  `;
+  const movesEl = document.getElementById('pokeMoves');
+  moves.forEach((m, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'poke-move';
+    btn.innerHTML = `${m.name}<div class="pp">${m.type}</div>`;
+    btn.onclick = () => executePokeMove(m);
+    movesEl.appendChild(btn);
+  });
+  document.getElementById('detailOverlay').classList.add('active');
+}
+
+function executePokeMove(move){
+  if(!battleState) return;
+  const { unit, enemy } = battleState;
+  const log = document.getElementById('pokeLog');
+  const playerSprite = document.getElementById('pokePlayerSprite');
+  const enemySprite = document.getElementById('pokeEnemySprite');
+  const movesEl = document.getElementById('pokeMoves');
+  movesEl.style.pointerEvents = 'none';
+
+  if(move.dmg === 0){
+    // Fallback / status
+    log.textContent = unit.name + ' falls back!';
+    unit.acted = true;
+    state.selectedUnit = null;
+    setTimeout(() => {
+      closeDetail();
+      renderBattlefield();
+      renderRight('squad');
+      // Enemy still gets a turn
+      setTimeout(() => enemyPokeTurn(), 400);
+    }, 900);
+    return;
+  }
+
+  // Player attacks
+  const dmg = Math.max(1, move.dmg + Math.floor(Math.random()*5) - 2);
+  log.textContent = unit.name + ' used ' + move.name + '!';
+  playerSprite.classList.add('attack');
+
+  setTimeout(() => {
+    playerSprite.classList.remove('attack');
+    enemySprite.classList.add('hurt');
+    enemy.hp = Math.max(0, enemy.hp - dmg);
+    document.getElementById('pokeEnemyHp').style.width = Math.max(0, enemy.hp/enemy.maxHp*100) + '%';
+    log.textContent = enemy.name + ' took ' + dmg + ' damage!';
+
+    setTimeout(() => {
+      enemySprite.classList.remove('hurt');
+      if(enemy.hp <= 0){
+        enemySprite.classList.add('faint');
+        log.textContent = enemy.name + ' was defeated!';
+        state.scrap += 10 + Math.floor(Math.random()*8);
+        state.bio += 3;
+        unit.acted = true;
+        state.selectedUnit = null;
+        setTimeout(() => {
+          closeDetail();
+          if(state.enemies.every(e => e.hp <= 0)) endCombat(true);
+          else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
+        }, 1000);
+        return;
+      }
+
+      // Enemy turn
+      setTimeout(() => enemyPokeTurn(), 600);
+    }, 700);
+  }, 450);
+}
+
+function enemyPokeTurn(){
+  if(!battleState) return;
+  const { unit, enemy } = battleState;
+  if(enemy.hp <= 0 || unit.hp <= 0) return;
+
+  const log = document.getElementById('pokeLog');
+  const playerSprite = document.getElementById('pokePlayerSprite');
+  const enemySprite = document.getElementById('pokeEnemySprite');
+
+  const dmg = enemy.dmg + Math.floor(Math.random()*4) - 1;
+  log.textContent = enemy.name + ' attacks!';
+  enemySprite.classList.add('attack');
+
+  setTimeout(() => {
+    enemySprite.classList.remove('attack');
+    playerSprite.classList.add('hurt');
+    unit.hp = Math.max(0, unit.hp - dmg);
+    state.sanity = Math.max(0, state.sanity - (state.leader?.bonus==='Hardened' ? Math.floor(enemy.sanDmg*0.6) : enemy.sanDmg));
+    document.getElementById('pokePlayerHp').style.width = Math.max(0, unit.hp/unit.maxHp*100) + '%';
+    log.textContent = unit.name + ' took ' + dmg + ' damage!';
+
+    setTimeout(() => {
+      playerSprite.classList.remove('hurt');
+      unit.acted = true;
+      state.selectedUnit = null;
+
+      if(unit.hp <= 0){
+        playerSprite.classList.add('faint');
+        log.textContent = unit.name + ' was defeated!';
+        setTimeout(() => {
+          closeDetail();
+          showDetail('UNIT DOWN', `<div style="text-align:center"><img src="${unit.img}" style="width:90px;height:90px;object-fit:contain;filter:grayscale(1);opacity:0.5;margin-bottom:8px"><div style="color:var(--danger);font-weight:700">${unit.name}</div><div style="color:var(--muted)">Killed in action</div></div>`,
+            [{text:'Continue', action:()=>{
+              closeDetail();
+              const living = getCurrentSquad().filter(u=>u.hp>0);
+              if(living.length===0) endCombat(false);
+              else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
+            }}]);
+        }, 900);
+        return;
+      }
+
+      // Back to menu or close if acted
+      setTimeout(() => {
+        closeDetail();
+        renderBattlefield();
+        renderRight('squad');
+        updateRes();
+        saveGame();
+      }, 700);
+    }, 700);
+  }, 450);
+}
+
 function enemyTurn(){const livingE=state.enemies.filter(e=>e.hp>0),livingU=getCurrentSquad().filter(u=>u.hp>0);if(!livingE.length||!livingU.length)return;
 const atk=livingE[Math.floor(Math.random()*livingE.length)],tgt=livingU[Math.floor(Math.random()*livingU.length)];
 const dmg=atk.dmg+Math.floor(Math.random()*4)-1;tgt.hp=Math.max(0,tgt.hp-dmg);
