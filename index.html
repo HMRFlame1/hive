@@ -112,6 +112,15 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 @keyframes slideIn{from{transform:translateX(26px);opacity:0}to{transform:translateX(0);opacity:1}}
 .empty{text-align:center;color:var(--muted);padding:16px 5px;font-size:.75rem}
 
+.build-progress { height: 8px; background: #1a2030; border-radius: 4px; overflow: hidden; margin-top: 4px; border: 1px solid var(--border); }
+.build-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 4px; transition: width 0.5s linear; width: 0%; }
+.modal.wide { max-width: 560px; }
+.modal.wide img.building-hero { width: 100%; max-height: 160px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; }
+.building-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+.building-stat { background: var(--panel2); padding: 10px; border-radius: 6px; font-size: 0.78rem; }
+.building-stat .label { color: var(--muted); font-size: 0.65rem; margin-bottom: 2px; }
+
+
 /* Pokémon-style battle */
 .poke-battle { text-align: center; }
 .poke-field { display: flex; justify-content: space-between; align-items: flex-end; min-height: 180px; margin: 12px 0; position: relative; }
@@ -379,15 +388,18 @@ el.onclick=()=>showWeaponDetail(w);p.appendChild(el);});
     el.className = 'store-item';
     if(owned){
       if(owned.building){
+        const total = (owned.readyAt - owned.startedAt) || (b.time*1000);
+        const elapsed = Date.now() - (owned.startedAt || (owned.readyAt - total));
+        const pct = Math.min(100, Math.max(0, (elapsed / total) * 100));
         const left = Math.max(0, Math.ceil((owned.readyAt - Date.now())/1000));
-        el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>Building... '+left+'s</small></div><div class="store-cost">⏳</div>';
+        el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info" style="flex:1"><strong>'+b.name+'</strong><small>Constructing... '+left+'s</small><div class="build-progress"><div class="build-progress-fill" style="width:'+pct+'%"></div></div></div><div class="store-cost">⏳</div>';
       } else {
-        el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>ONLINE — Click to use</small></div><div class="store-cost" style="color:var(--ok)">✓</div>';
+        el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>ONLINE — Click to manage</small></div><div class="store-cost" style="color:var(--ok)">✓</div>';
         el.onclick = ()=>useBuilding(b.id);
       }
     } else {
       const costStr = Object.entries(b.cost).map(([k,v])=>v+(k==='scrap'?'⚙️':k==='bio'?'🧬':'💎')).join(' ');
-      el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>'+b.desc+'<br>Time: '+b.time+'s</small></div><div class="store-cost">'+costStr+'</div>';
+      el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>'+b.desc+'<br>Build time: '+b.time+'s</small></div><div class="store-cost">'+costStr+'</div>';
       el.onclick = ()=>startBuild(b);
     }
     p.appendChild(el);
@@ -754,53 +766,117 @@ function startBuild(b){
     if((state[k]||0) < v){toast('Not enough resources','warn');return;}
   }
   for(const [k,v] of Object.entries(b.cost)) state[k]-=v;
-  state.buildings.push({id:b.id, building:true, readyAt: Date.now()+b.time*1000});
-  toast(`Construction started: ${b.name}`,'ok');
+  const started = Date.now();
+  state.buildings.push({id:b.id, building:true, startedAt: started, readyAt: started + b.time*1000, totalTime: b.time*1000});
+  toast('Construction started: '+b.name,'ok');
   updateRes(); renderLeft('build'); saveGame();
-  // finish later
-  setTimeout(()=>{
+  // Live progress refresh while building
+  const progressTimer = setInterval(()=>{
     const bb = state.buildings.find(x=>x.id===b.id);
-    if(bb){ bb.building=false; delete bb.readyAt; toast(`${b.name} complete!`,'ok'); renderLeft('build'); saveGame(); }
+    if(!bb || !bb.building){ clearInterval(progressTimer); return; }
+    // refresh build tab if visible
+    const activeTab = document.querySelector('#leftPanel')?.closest('.panel')?.querySelector('.tab.active')?.dataset.tab;
+    if(activeTab==='build') renderLeft('build');
+  }, 500);
+  setTimeout(()=>{
+    clearInterval(progressTimer);
+    const bb = state.buildings.find(x=>x.id===b.id);
+    if(bb){ bb.building=false; delete bb.readyAt; delete bb.startedAt; toast(b.name+' construction complete!','ok'); renderLeft('build'); saveGame(); }
   }, b.time*1000);
 }
 function useBuilding(id){
+  const def = BUILDINGS_DEF.find(b=>b.id===id) || {};
   if(id==='barracks'){
-    showDetail('Barracks',`
-      <img src="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/eclaf_orig.jpg" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px">
-      <div style="font-size:.8rem;color:var(--muted);margin-bottom:8px">Recruit infantry or organize squads.</div>
+    showDetail('Barracks — Personnel Hub', `
+      <img class="building-hero" src="${def.img||'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/eclaf_orig.jpg'}">
+      <div style="font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:10px">
+        The Barracks is the heart of your fighting force. Here you can recruit fresh infantry, train elite Mark-3 units, and organize named squads for deployment across the planet.
+      </div>
+      <div class="building-stat-grid">
+        <div class="building-stat"><div class="label">STATUS</div>ONLINE</div>
+        <div class="building-stat"><div class="label">CAPACITY</div>Unlimited pool</div>
+        <div class="building-stat"><div class="label">RIFLEMAN</div>25 ⚙️ • 80 HP</div>
+        <div class="building-stat"><div class="label">MARK-3</div>85 ⚙️ • 140 HP</div>
+      </div>
+      <div style="font-size:0.75rem;color:var(--accent);margin-bottom:8px">Available at outpost: ${(state.pool||[]).length} units</div>
     `,[
       {text:'Recruit Rifleman (25⚙️)', action:()=>{closeDetail();recruitUnit('rifle');}},
-      {text:'Recruit Mark-3 (85⚙️)', action:()=>{closeDetail();buyMark3();}},
+      {text:'Recruit Mark-3 Heavy (85⚙️)', action:()=>{closeDetail();buyMark3();}},
       {text:'Close', action:closeDetail}
     ]);
   } else if(id==='medbay'){
-    showDetail('Medbay',`
-      <img src="https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/uoeso_orig.jpg" style="width:100%;max-height:100px;object-fit:cover;border-radius:6px;margin-bottom:8px">
-      Heal all wounded units at outpost for 15 Bio.
+    const wounded = (state.pool||[]).filter(u=>u.hp<u.maxHp || u.san<u.maxSan).length;
+    showDetail('Medbay — Field Hospital', `
+      <img class="building-hero" src="${def.img||'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/uoeso_orig.jpg'}">
+      <div style="font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:10px">
+        Trauma bays and neural stabilizers. Medbay staff can restore combat effectiveness to wounded and psychologically damaged soldiers. Units must be recalled to the outpost before treatment.
+      </div>
+      <div class="building-stat-grid">
+        <div class="building-stat"><div class="label">STATUS</div>ONLINE</div>
+        <div class="building-stat"><div class="label">WOUNDED AT OUTPOST</div>${wounded}</div>
+        <div class="building-stat"><div class="label">HEAL COST</div>15 🧬 Bio</div>
+        <div class="building-stat"><div class="label">EFFECT</div>Full HP + Sanity boost</div>
+      </div>
     `,[
-      {text:'Heal All (15🧬)', action:()=>{
+      {text:'Heal All Outpost Units (15🧬)', action:()=>{
         closeDetail();
         if(state.bio<15){toast('Need 15 Bio','warn');return;}
         state.bio-=15;
-        state.pool.forEach(u=>{u.hp=u.maxHp;u.san=Math.min(u.maxSan,u.san+20);u.status='stable';});
-        toast('All outpost units healed','ok'); updateRes(); saveGame();
+        state.pool.forEach(u=>{u.hp=u.maxHp;u.san=Math.min(u.maxSan,u.san+25);u.status='stable';});
+        toast('All outpost units treated','ok'); updateRes(); saveGame();
       }},
       {text:'Close', action:closeDetail}
     ]);
   } else if(id==='forge'){
-    showDetail('Forge','Produce weapons and vehicles.',[
-      {text:'Open Store', action:()=>{closeDetail(); document.querySelectorAll('.tab').forEach(t=>{if(t.dataset.tab==='store')t.click();});}},
+    showDetail('Forge — Arms Workshop', `
+      <img class="building-hero" src="${def.img||'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/almta_orig.jpg'}">
+      <div style="font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:10px">
+        Heavy fabrication systems. The Forge produces weapons, vehicle components, and experimental munitions. Link to the Store to purchase gear for your squads.
+      </div>
+      <div class="building-stat-grid">
+        <div class="building-stat"><div class="label">STATUS</div>ONLINE</div>
+        <div class="building-stat"><div class="label">OUTPUT</div>Weapons & Vehicles</div>
+        <div class="building-stat"><div class="label">WEAPONS OWNED</div>${(state.weapons||[]).length}</div>
+        <div class="building-stat"><div class="label">VEHICLES OWNED</div>${(state.vehicles||[]).length}</div>
+      </div>
+    `,[
+      {text:'Open Weapons & Vehicles Store', action:()=>{closeDetail(); document.querySelectorAll('.tab').forEach(t=>{if(t.dataset.tab==='store')t.click();});}},
       {text:'Close', action:closeDetail}
     ]);
   } else if(id==='lab'){
-    showDetail('Research Lab','Research improves your forces over time. (+5 Scrap next victory)',[
+    showDetail('Research Lab — Vorrh Analysis', `
+      <img class="building-hero" src="${def.img||'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/image-2026-07-21t212042-276_orig.jpg'}">
+      <div style="font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:10px">
+        Containment chambers and signal analysis. The Lab studies captured Vorrh tissue and transmissions. Passive bonus: +5 Scrap on every sector victory while the Lab is online.
+      </div>
+      <div class="building-stat-grid">
+        <div class="building-stat"><div class="label">STATUS</div>ONLINE</div>
+        <div class="building-stat"><div class="label">BONUS</div>+5 Scrap / victory</div>
+        <div class="building-stat"><div class="label">FOCUS</div>Vorrh biology</div>
+        <div class="building-stat"><div class="label">VOID STORED</div>${state.void||0} 💎</div>
+      </div>
+    `,[
       {text:'Close', action:closeDetail}
     ]);
   } else if(id==='sanctuary'){
-    showDetail('Sanctuary','Mental fortification active. Sanity loss reduced.',[
+    showDetail('Sanctuary — Mental Fortress', `
+      <img class="building-hero" src="${def.img||'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/i5sgx_orig.jpg'}">
+      <div style="font-size:0.85rem;line-height:1.5;color:var(--muted);margin-bottom:10px">
+        Sound-dampened chambers and cognitive anchors. The Sanctuary protects personnel from Vorrh psychic influence. While online, command-level sanity loss from combat is reduced.
+      </div>
+      <div class="building-stat-grid">
+        <div class="building-stat"><div class="label">STATUS</div>ONLINE</div>
+        <div class="building-stat"><div class="label">COMMAND SANITY</div>${state.sanity||0}%</div>
+        <div class="building-stat"><div class="label">EFFECT</div>Reduced sanity drain</div>
+        <div class="building-stat"><div class="label">PROTECTION</div>Active</div>
+      </div>
+    `,[
       {text:'Close', action:closeDetail}
     ]);
   }
+  // Make modal wider
+  const modal = document.querySelector('#detailBox');
+  if(modal) modal.classList.add('wide');
 }
 function recruitUnit(type){
   if(state.scrap<25){toast('Need 25 Scrap','warn');return;}
@@ -886,7 +962,11 @@ function showVehicleDetail(v){
 function showDetail(title,body,choices){const box=document.getElementById('detailBox');box.innerHTML=`<button class="modal-close" onclick="closeDetail()" title="Close">×</button><h2>${title}</h2><div class="modal-sub">${body}</div><div id="detailChoices"></div>`;
 const ch=document.getElementById('detailChoices');(choices||[]).forEach(c=>{const b=document.createElement('button');b.className='btn primary';b.style.cssText='width:100%;margin-top:5px';b.textContent=c.text;b.onclick=c.action;ch.appendChild(b);});
 document.getElementById('detailOverlay').classList.add('active');}
-function closeDetail(){document.getElementById('detailOverlay').classList.remove('active');}
+function closeDetail(){
+  document.getElementById('detailOverlay').classList.remove('active');
+  const modal = document.getElementById('detailBox');
+  if(modal) modal.classList.remove('wide');
+}
 function toast(msg,type=''){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='.3s';setTimeout(()=>t.remove(),300);},2500);}
 setInterval(()=>{if(state.phase==='outpost'&&Math.random()<.08)runScan();},55000);
 
