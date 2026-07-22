@@ -179,6 +179,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="tagline">SELECT SQUAD LEADER — CLICK FOR FULL DOSSIER</div>
 <div class="leader-grid" id="leaderGrid"></div>
 <button class="start-btn" id="startBtn" disabled>ENTER COMMAND</button>
+  <button class="btn" style="margin-top:12px;padding:8px 16px;font-size:0.75rem" onclick="localStorage.removeItem('hive_save');location.reload()">CLEAR SAVE / NEW GAME</button>
 </div>
 <div id="game" class="screen">
 <div class="topbar">
@@ -270,17 +271,27 @@ function loadGame(){
     const raw = localStorage.getItem('hive_save');
     if(!raw) return false;
     const data = JSON.parse(raw);
+    if(!data || !data.leader || !data.leader.id) return false;
     Object.assign(state, data);
-    if(state.leader){
-      document.getElementById('titleScreen').classList.remove('active');
-      document.getElementById('game').classList.add('active');
-      document.getElementById('cmdName').textContent = state.leader.rank+' '+state.leader.name+' '+state.leader.last;
-      renderAll();
-      toast('Game loaded','ok');
-      return true;
-    }
-  }catch(e){}
-  return false;
+    // Ensure arrays exist
+    if(!state.pool) state.pool = [];
+    if(!state.sectorSquads) state.sectorSquads = {};
+    if(!state.weapons) state.weapons = [];
+    if(!state.vehicles) state.vehicles = [];
+    if(!state.buildings) state.buildings = [];
+    if(!state.transmissions) state.transmissions = [];
+    if(!state.sectors) state.sectors = JSON.parse(JSON.stringify(SECTORS));
+    document.getElementById('titleScreen').classList.remove('active');
+    document.getElementById('game').classList.add('active');
+    document.getElementById('cmdName').textContent = state.leader.rank+' '+state.leader.name+' '+state.leader.last;
+    renderAll();
+    toast('Game loaded','ok');
+    return true;
+  }catch(e){
+    console.error('Load failed', e);
+    localStorage.removeItem('hive_save');
+    return false;
+  }
 }
 function resetGame(){
   if(!confirm('Reset all progress? This cannot be undone.')) return;
@@ -919,19 +930,11 @@ setInterval(()=>{
 }, 28000);
 
 
-// Try load existing save
-if(!loadGame()){
-  init();
-} else {
-  // still need tab handlers
-  document.querySelectorAll('.tabs').forEach(tabBar=>{
-    tabBar.querySelectorAll('.tab').forEach(tab=>{
-      tab.onclick=()=>{tabBar.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));tab.classList.add('active');
-      const side=tabBar.closest('.panel').querySelector('.panel-b').id;
-      if(side==='leftPanel')renderLeft(tab.dataset.tab);else renderRight(tab.dataset.tab);};
-    });
-  });
-}
+// Always set up UI, then try load
+init();
+// If a valid save exists, loadGame will switch to game screen
+setTimeout(() => { loadGame(); }, 50);
+
 
 
 // PWA install + service worker
