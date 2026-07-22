@@ -371,9 +371,6 @@ m3.onclick=buyMark3;p.appendChild(m3);
 WEAPONS_STORE.forEach(w=>{const el=document.createElement('div');el.className='store-item';
 el.innerHTML=`${w.img?`<img src="${w.img}">`:'<div style="width:48px;height:34px;background:#0a0c12;border-radius:3px"></div>'}<div class="store-info"><strong>${w.name}</strong><small>DMG ${w.dmg} • ${w.effect}<br>${w.desc}</small></div><div class="store-cost">${w.cost}⚙️</div>`;
 el.onclick=()=>showWeaponDetail(w);p.appendChild(el);});
-
-}}
-
 } else if(tab==='build'){
   p.innerHTML='<div style="font-size:.7rem;color:var(--muted);margin-bottom:6px">OUTPOST CONSTRUCTION</div>';
   BUILDINGS_DEF.forEach(b=>{
@@ -383,18 +380,19 @@ el.onclick=()=>showWeaponDetail(w);p.appendChild(el);});
     if(owned){
       if(owned.building){
         const left = Math.max(0, Math.ceil((owned.readyAt - Date.now())/1000));
-        el.innerHTML = `<img src="${b.img}" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>${b.name}</strong><small>Building... ${left}s</small></div><div class="store-cost">⏳</div>`;
+        el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>Building... '+left+'s</small></div><div class="store-cost">⏳</div>';
       } else {
-        el.innerHTML = `<img src="${b.img}" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>${b.name}</strong><small>ONLINE — Click to use</small></div><div class="store-cost" style="color:var(--ok)">✓</div>`;
+        el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>ONLINE — Click to use</small></div><div class="store-cost" style="color:var(--ok)">✓</div>';
         el.onclick = ()=>useBuilding(b.id);
       }
     } else {
       const costStr = Object.entries(b.cost).map(([k,v])=>v+(k==='scrap'?'⚙️':k==='bio'?'🧬':'💎')).join(' ');
-      el.innerHTML = `<img src="${b.img}" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>${b.name}</strong><small>${b.desc}<br>Time: ${b.time}s</small></div><div class="store-cost">${costStr}</div>`;
+      el.innerHTML = '<img src="'+b.img+'" style="width:64px;height:48px;object-fit:cover;border-radius:4px"><div class="store-info"><strong>'+b.name+'</strong><small>'+b.desc+'<br>Time: '+b.time+'s</small></div><div class="store-cost">'+costStr+'</div>';
       el.onclick = ()=>startBuild(b);
     }
     p.appendChild(el);
   });
+}
 }
 
 function renderRight(tab){
