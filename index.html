@@ -180,6 +180,126 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   .start-btn { width: 100%; max-width: 280px; padding: 14px; font-size: 1rem; }
 }
 
+
+/* ===== ADVANCED POKÉMON-STYLE BATTLE ===== */
+.modal.battle-modal { max-width: 640px; padding: 12px 16px 16px; }
+.poke-battle { text-align: center; }
+.poke-field {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  min-height: 220px; margin: 8px 0 4px; position: relative;
+  background: radial-gradient(ellipse at 50% 100%, #0a1a14 0%, #07080c 70%);
+  border-radius: 10px; padding: 12px 16px; border: 1px solid var(--border);
+}
+.poke-enemy { text-align: right; flex: 1; position: relative; }
+.poke-player { text-align: left; flex: 1; position: relative; }
+.poke-sprite {
+  width: 120px; height: 120px; object-fit: contain;
+  background: transparent; border-radius: 8px; transition: all 0.25s;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+}
+.poke-sprite.hurt { animation: pokeHurt 0.55s ease; }
+.poke-sprite.attack { animation: pokeAttack 0.4s ease; }
+.poke-sprite.faint { animation: pokeFaint 0.9s ease forwards; }
+.poke-sprite.enemy-attack { animation: pokeEnemyAttack 0.4s ease; }
+@keyframes pokeHurt {
+  0%,100%{transform:translateX(0);filter:brightness(1) drop-shadow(0 4px 8px rgba(0,0,0,0.5))}
+  15%,50%{transform:translateX(-10px);filter:brightness(2.5) drop-shadow(0 0 12px #ff3b5c)}
+  30%,70%{transform:translateX(10px)}
+}
+@keyframes pokeAttack {
+  0%{transform:translateX(0)} 35%{transform:translateX(28px) scale(1.05)} 100%{transform:translateX(0)}
+}
+@keyframes pokeEnemyAttack {
+  0%{transform:translateX(0)} 35%{transform:translateX(-28px) scale(1.05)} 100%{transform:translateX(0)}
+}
+@keyframes pokeFaint {
+  0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(40px) rotate(8deg)}
+}
+.poke-hp-box {
+  background: linear-gradient(180deg, #1a2030 0%, #0f1118 100%);
+  border: 2px solid var(--border); border-radius: 8px;
+  padding: 8px 12px; margin: 4px 0; display: inline-block;
+  min-width: 160px; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.poke-hp-box .name { font-weight: 800; font-size: 0.88rem; letter-spacing: 0.3px; }
+.poke-hp-box .lvl { font-size: 0.65rem; color: var(--muted); }
+.poke-hp-bar { height: 10px; background: #0a0c12; border-radius: 5px; overflow: hidden; margin-top: 4px; border: 1px solid #1a2030; }
+.poke-hp-fill { height: 100%; border-radius: 4px; transition: width 0.7s ease; }
+.poke-log {
+  font-size: 0.9rem; min-height: 42px; margin: 10px 0 6px;
+  color: var(--text); font-weight: 600; background: var(--panel2);
+  border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px;
+  text-align: left; line-height: 1.4;
+}
+.poke-moves { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px; }
+.poke-move {
+  background: linear-gradient(180deg, #1a2030 0%, #12151e 100%);
+  border: 2px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; cursor: pointer; text-align: left;
+  font-size: 0.85rem; font-weight: 700; transition: all 0.15s;
+}
+.poke-move:hover { border-color: var(--accent); background: #1e2535; transform: scale(1.02); }
+.poke-move:active { transform: scale(0.98); }
+.poke-move .pp { font-size: 0.68rem; color: var(--muted); margin-top: 2px; font-weight: 500; }
+.poke-move.disabled { opacity: 0.4; pointer-events: none; }
+.poke-actions { display: flex; gap: 8px; margin-top: 10px; }
+.poke-actions .btn { flex: 1; padding: 10px; font-size: 0.8rem; }
+.dmg-float {
+  position: absolute; font-size: 1.4rem; font-weight: 900;
+  color: var(--danger); text-shadow: 0 0 8px rgba(255,59,92,0.6);
+  animation: dmgFloat 0.9s ease forwards; pointer-events: none; z-index: 10;
+}
+@keyframes dmgFloat {
+  0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-40px) scale(1.2)}
+}
+
+
+/* ===== SHIP TRAVEL ===== */
+.travel-scene {
+  text-align: center; padding: 10px 0; min-height: 280px;
+  background: radial-gradient(ellipse at 50% 30%, #0a1520 0%, #07080c 60%);
+  border-radius: 10px; border: 1px solid var(--border); position: relative; overflow: hidden;
+}
+.travel-stars {
+  position: absolute; inset: 0; background-image:
+    radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+    radial-gradient(1px 1px at 40px 70px, rgba(255,255,255,0.6), transparent),
+    radial-gradient(1px 1px at 50px 160px, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 90px 40px, rgba(0,229,160,0.5), transparent),
+    radial-gradient(1px 1px at 130px 80px, #fff, transparent),
+    radial-gradient(1px 1px at 160px 120px, rgba(255,255,255,0.4), transparent);
+  background-size: 200px 200px; animation: starScroll 8s linear infinite; opacity: 0.6;
+}
+@keyframes starScroll { from{background-position:0 0} to{background-position:0 -200px} }
+.travel-ship {
+  font-size: 3rem; position: relative; z-index: 2;
+  animation: shipBob 2s ease-in-out infinite; margin: 20px 0 8px;
+  filter: drop-shadow(0 0 12px rgba(0,180,216,0.5));
+}
+@keyframes shipBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+.travel-ship.launching { animation: shipLaunch 2.5s ease-in forwards; }
+@keyframes shipLaunch {
+  0%{transform:translateY(0) scale(1); opacity:1}
+  40%{transform:translateY(-20px) scale(1.1)}
+  100%{transform:translateY(-120px) scale(0.3); opacity:0}
+}
+.travel-planet {
+  width: 70px; height: 70px; border-radius: 50%; margin: 0 auto 8px;
+  background: radial-gradient(circle at 30% 30%, #34d399, #065f46);
+  box-shadow: inset -12px -8px 20px rgba(0,0,0,0.4), 0 0 20px rgba(0,229,160,0.2);
+  position: relative; z-index: 1; transition: all 0.8s;
+}
+.travel-planet.depart { transform: scale(0.5); opacity: 0.3; }
+.travel-planet.arrive {
+  background: radial-gradient(circle at 30% 30%, #60a5fa, #1e3a5f);
+  animation: planetIn 1s ease forwards;
+}
+@keyframes planetIn {
+  0%{transform:scale(0.3);opacity:0} 100%{transform:scale(1);opacity:1}
+}
+.travel-status { font-size: 0.9rem; font-weight: 700; margin: 8px 0; position: relative; z-index: 2; }
+.travel-bar-wrap { max-width: 280px; margin: 10px auto; position: relative; z-index: 2; }
+
 </style>
 </head>
 <body>
@@ -350,7 +470,7 @@ if(state.leader.bonus==='Tactical')startIds.push('van2');
 if(startIds.length<3)startIds.push('sarge');
 state.pool=startIds.map((id,i)=>{
 const s=SOLDIERS.find(x=>x.id===id)||SOLDIERS[0];
-return{id:'u'+i,name:s.name,rank:s.rank,role:s.role,img:s.img,hp:s.hp+(state.leader.bonus==='Assault'?10:0),maxHp:s.hp+(state.leader.bonus==='Assault'?10:0),san:s.san,maxSan:s.san,weapon:null,status:'stable',acted:false,sector:null};
+return{id:'u'+i,name:s.name,rank:s.rank,role:s.role,img:s.img,hp:s.hp+(state.leader.bonus==='Assault'?10:0),maxHp:s.hp+(state.leader.bonus==='Assault'?10:0),san:s.san,maxSan:s.san,weapon:null,status:'stable',acted:false,sector:null,upgrades:[]};
 });
 state.weapons=[{id:'sw1',name:'M251 Pulse',dmg:16,effect:'standard',img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/m5_orig.png'}];
 document.getElementById('titleScreen').classList.remove('active');
@@ -475,7 +595,85 @@ document.getElementById('btnEndTurn').style.display='inline-block';document.getE
 addTx('Squad',`Contact in ${sector?.name}. ${count} Vorrh.`,'warn');toast(`Engaging ${count} Vorrh`,'danger');renderBattlefield();renderRight('squad');
 }
 
-let battleState = null; // {unit, enemyIdx, enemy}
+
+
+function getMovesForUnit(unit){
+  const base = unit.weapon ? unit.weapon.dmg : 12;
+  const role = (unit.role || '').toLowerCase();
+  const name = (unit.name || '').toLowerCase();
+
+  // Default kit
+  let moves = [
+    { name: unit.weapon ? unit.weapon.name : 'Rifle Fire', dmg: base, type: 'WEAPON', desc: 'Standard attack' },
+    { name: 'Burst', dmg: Math.floor(base*0.7), type: 'RAPID', desc: 'Quick volley' },
+    { name: 'Aimed Shot', dmg: Math.floor(base*1.3), type: 'PRECISION', desc: 'High damage' },
+    { name: 'Suppress', dmg: Math.floor(base*0.45), type: 'TACTICAL', desc: 'Debuff enemy', debuff: true }
+  ];
+
+  // Role / character specific overrides
+  if(role.includes('medic') || name.includes('susan')){
+    moves = [
+      { name: unit.weapon ? unit.weapon.name : 'Sidearm', dmg: Math.floor(base*0.9), type: 'WEAPON', desc: 'Sidearm shot' },
+      { name: 'Stim Shot', dmg: 0, type: 'SUPPORT', desc: 'Restore 20 HP to self', heal: 20 },
+      { name: 'Neuro-Calm', dmg: 0, type: 'SUPPORT', desc: 'Restore sanity', sanHeal: 15 },
+      { name: 'Point Blank', dmg: Math.floor(base*1.2), type: 'PRECISION', desc: 'Close-range shot' }
+    ];
+  } else if(role.includes('heavy') || role.includes('breacher') || name.includes('mike') || name.includes('harlan')){
+    moves = [
+      { name: unit.weapon ? unit.weapon.name : 'Heavy Rifle', dmg: base, type: 'WEAPON', desc: 'Primary fire' },
+      { name: 'Suppressing Barrage', dmg: Math.floor(base*0.8), type: 'RAPID', desc: 'Area pressure', debuff: true },
+      { name: 'Breach Charge', dmg: Math.floor(base*1.5), type: 'EXPLOSIVE', desc: 'Devastating blast' },
+      { name: 'Fortify', dmg: 0, type: 'DEFENSE', desc: 'Reduce next damage taken', fortify: true }
+    ];
+  } else if(role.includes('scout') || role.includes('recon') || name.includes('duke')){
+    moves = [
+      { name: unit.weapon ? unit.weapon.name : 'Scout Rifle', dmg: base, type: 'WEAPON', desc: 'Clean shot' },
+      { name: 'Weak Point', dmg: Math.floor(base*1.4), type: 'PRECISION', desc: 'Critical targeting' },
+      { name: 'Smoke Disengage', dmg: 0, type: 'TACTICAL', desc: 'Guaranteed escape next flee', smoke: true },
+      { name: 'Mark Target', dmg: Math.floor(base*0.5), type: 'TACTICAL', desc: 'Debuff + reveal', debuff: true }
+    ];
+  } else if(role.includes('warden') || name.includes('gritt') || role.includes('assault')){
+    moves = [
+      { name: unit.weapon ? unit.weapon.name : 'Combat Rifle', dmg: base, type: 'WEAPON', desc: 'Steady fire' },
+      { name: 'Hold the Line', dmg: Math.floor(base*0.6), type: 'DEFENSE', desc: 'Attack + fortify', fortify: true },
+      { name: 'Execution Shot', dmg: Math.floor(base*1.45), type: 'PRECISION', desc: 'Finishing round' },
+      { name: 'Bayonet', dmg: Math.floor(base*1.1), type: 'MELEE', desc: 'Close combat' }
+    ];
+  } else if(role.includes('engineer') || role.includes('tech') || name.includes('savannah') || name.includes('holt')){
+    moves = [
+      { name: unit.weapon ? unit.weapon.name : 'Pulse Tool', dmg: Math.floor(base*0.85), type: 'WEAPON', desc: 'Energy discharge' },
+      { name: 'Overcharge', dmg: Math.floor(base*1.5), type: 'TECH', desc: 'Overloaded shot' },
+      { name: 'EMP Burst', dmg: Math.floor(base*0.7), type: 'TECH', desc: 'Disrupt + debuff', debuff: true },
+      { name: 'Repair Protocols', dmg: 0, type: 'SUPPORT', desc: 'Self-repair 15 HP', heal: 15 }
+    ];
+  } else if(role.includes('tactician') || name.includes('vanessa') || name.includes('cross')){
+    moves = [
+      { name: unit.weapon ? unit.weapon.name : 'Carbine', dmg: base, type: 'WEAPON', desc: 'Calculated shot' },
+      { name: 'Coordinated Fire', dmg: Math.floor(base*1.25), type: 'TACTICAL', desc: 'Precision doctrine' },
+      { name: 'Reposition', dmg: 0, type: 'TACTICAL', desc: 'Fortify + prep', fortify: true },
+      { name: 'Exploit Gap', dmg: Math.floor(base*1.35), type: 'PRECISION', desc: 'Target weakness' }
+    ];
+  } else if(role.includes('elite') || name.includes('mark-3') || name.includes('mark 3')){
+    moves = [
+      { name: 'Heavy Cannon', dmg: Math.floor(base*1.2), type: 'WEAPON', desc: 'Mark-3 primary' },
+      { name: 'Shatter Round', dmg: Math.floor(base*1.6), type: 'EXPLOSIVE', desc: 'Armor-piercing' },
+      { name: 'Shield Wall', dmg: 0, type: 'DEFENSE', desc: 'Heavy fortify', fortify: true },
+      { name: 'Sweep Fire', dmg: Math.floor(base*0.9), type: 'RAPID', desc: 'Sustained fire', debuff: true }
+    ];
+  }
+
+  // Upgrades from unit.upgrades if present
+  if(unit.upgrades && unit.upgrades.length){
+    unit.upgrades.forEach(up => {
+      if(up === 'overcharge') moves[0].dmg = Math.floor(moves[0].dmg * 1.15);
+      if(up === 'veteran') moves.forEach(m => { if(m.dmg>0) m.dmg = Math.floor(m.dmg*1.1); });
+    });
+  }
+  return moves;
+}
+
+
+let battleState = null;
 
 function performAttack(unitId, enemyIdx){
   const squad = getCurrentSquad();
@@ -483,113 +681,147 @@ function performAttack(unitId, enemyIdx){
   const enemy = state.enemies[enemyIdx];
   if(!unit || !enemy || unit.hp <= 0 || enemy.hp <= 0){ toast('Unit is down or invalid','warn'); return; }
   if(unit.acted){ toast(unit.name + ' already acted','warn'); return; }
-
-  battleState = { unit, enemyIdx, enemy };
+  battleState = { unit, enemyIdx, enemy, turn: 'player', canFlee: true };
   openPokeBattle(unit, enemy);
 }
 
 function openPokeBattle(unit, enemy){
-  const moves = [
-    { name: unit.weapon ? unit.weapon.name : 'Rifle Shot', dmg: unit.weapon ? unit.weapon.dmg : 12, type: 'NORMAL' },
-    { name: 'Suppressing Fire', dmg: 8, type: 'NORMAL' },
-    { name: 'Aimed Shot', dmg: Math.floor((unit.weapon ? unit.weapon.dmg : 12) * 1.3), type: 'SPECIAL' },
-    { name: 'Fallback', dmg: 0, type: 'STATUS' }
-  ];
+  const moves = getMovesForUnit(unit);
 
   const box = document.getElementById('detailBox');
+  box.classList.add('wide', 'battle-modal');
   box.innerHTML = `
-    <button class="modal-close" onclick="closeDetail()" title="Close">×</button>
+    <button class="modal-close" onclick="attemptFlee()" title="Flee">×</button>
     <div class="poke-battle">
       <div class="poke-field">
         <div class="poke-player">
           <div class="poke-hp-box">
             <div class="name">${unit.name}</div>
+            <div class="lvl">${unit.rank} • ${unit.role}</div>
             <div class="poke-hp-bar"><div class="poke-hp-fill hp-fill" id="pokePlayerHp" style="width:${Math.max(0,unit.hp/unit.maxHp*100)}%"></div></div>
-            <div style="font-size:0.65rem;color:var(--muted)">${unit.hp}/${unit.maxHp}</div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${Math.max(0,unit.hp)} / ${unit.maxHp} HP</div>
           </div>
-          <img class="poke-sprite" id="pokePlayerSprite" src="${unit.img}">
+          <img class="poke-sprite" id="pokePlayerSprite" src="${unit.img}" alt="">
         </div>
         <div class="poke-enemy">
           <div class="poke-hp-box">
-            <div class="name">${enemy.name}</div>
+            <div class="name" style="color:var(--danger)">${enemy.name}</div>
+            <div class="lvl">Vorrh • Hostile</div>
             <div class="poke-hp-bar"><div class="poke-hp-fill" id="pokeEnemyHp" style="width:${Math.max(0,enemy.hp/enemy.maxHp*100)}%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div>
-            <div style="font-size:0.65rem;color:var(--muted)">${enemy.hp}/${enemy.maxHp}</div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${Math.max(0,enemy.hp)} / ${enemy.maxHp} HP</div>
           </div>
-          <img class="poke-sprite" id="pokeEnemySprite" src="${enemy.img}">
+          <img class="poke-sprite" id="pokeEnemySprite" src="${enemy.img}" alt="">
         </div>
       </div>
       <div class="poke-log" id="pokeLog">What will ${unit.name} do?</div>
       <div class="poke-moves" id="pokeMoves"></div>
+      <div class="poke-actions">
+        <button class="btn" onclick="attemptFlee()">FLEE</button>
+        <button class="btn" onclick="closeBattleMenu()">BACK</button>
+      </div>
     </div>
   `;
   const movesEl = document.getElementById('pokeMoves');
-  moves.forEach((m, i) => {
+  moves.forEach((m) => {
     const btn = document.createElement('div');
     btn.className = 'poke-move';
-    btn.innerHTML = `${m.name}<div class="pp">${m.type}</div>`;
+    btn.innerHTML = `${m.name}<div class="pp">${m.type} • ${m.desc}</div>`;
     btn.onclick = () => executePokeMove(m);
     movesEl.appendChild(btn);
   });
   document.getElementById('detailOverlay').classList.add('active');
 }
 
+function floatDmg(targetEl, amount){
+  if(!targetEl) return;
+  const parent = targetEl.parentElement;
+  if(!parent) return;
+  parent.style.position = 'relative';
+  const f = document.createElement('div');
+  f.className = 'dmg-float';
+  f.textContent = '−' + amount;
+  f.style.left = '40%';
+  f.style.top = '20%';
+  parent.appendChild(f);
+  setTimeout(() => f.remove(), 900);
+}
+
 function executePokeMove(move){
-  if(!battleState) return;
+  if(!battleState || battleState.turn !== 'player') return;
   const { unit, enemy } = battleState;
   const log = document.getElementById('pokeLog');
   const playerSprite = document.getElementById('pokePlayerSprite');
   const enemySprite = document.getElementById('pokeEnemySprite');
   const movesEl = document.getElementById('pokeMoves');
-  movesEl.style.pointerEvents = 'none';
+  if(movesEl) movesEl.style.pointerEvents = 'none';
+  document.querySelectorAll('.poke-actions .btn').forEach(b => b.disabled = true);
 
-  if(move.dmg === 0){
-    // Fallback / status
-    log.textContent = unit.name + ' falls back!';
+  battleState.turn = 'animating';
+
+  // Support / non-damage moves
+  if(move.heal || move.sanHeal || (move.dmg === 0 && move.fortify)){
+    log.textContent = unit.name + ' used ' + move.name + '!';
+    if(move.heal){
+      unit.hp = Math.min(unit.maxHp, unit.hp + move.heal);
+      const hpEl = document.getElementById('pokePlayerHp');
+      if(hpEl) hpEl.style.width = (unit.hp/unit.maxHp*100)+'%';
+      log.textContent = unit.name + ' recovered ' + move.heal + ' HP!';
+    }
+    if(move.sanHeal){
+      unit.san = Math.min(unit.maxSan, (unit.san||0) + move.sanHeal);
+      log.textContent = unit.name + ' regained focus (+'+move.sanHeal+' Sanity)!';
+    }
+    if(move.fortify){
+      battleState.fortified = true;
+      log.textContent = unit.name + ' fortifies! Next hit reduced.';
+    }
+    if(move.smoke){
+      battleState.smoke = true;
+      log.textContent = unit.name + ' deploys smoke! Next flee will succeed.';
+    }
     unit.acted = true;
-    state.selectedUnit = null;
-    setTimeout(() => {
-      closeDetail();
-      renderBattlefield();
-      renderRight('squad');
-      // Enemy still gets a turn
-      setTimeout(() => enemyPokeTurn(), 400);
-    }, 900);
+    setTimeout(() => enemyPokeTurn(), 900);
     return;
   }
 
-  // Player attacks
-  const dmg = Math.max(1, move.dmg + Math.floor(Math.random()*5) - 2);
+  const dmg = Math.max(1, move.dmg + Math.floor(Math.random()*6) - 2);
   log.textContent = unit.name + ' used ' + move.name + '!';
   playerSprite.classList.add('attack');
+  if(move.fortify) battleState.fortified = true;
+  if(move.smoke) battleState.smoke = true;
+
 
   setTimeout(() => {
     playerSprite.classList.remove('attack');
     enemySprite.classList.add('hurt');
     enemy.hp = Math.max(0, enemy.hp - dmg);
-    document.getElementById('pokeEnemyHp').style.width = Math.max(0, enemy.hp/enemy.maxHp*100) + '%';
-    log.textContent = enemy.name + ' took ' + dmg + ' damage!';
+    const hpEl = document.getElementById('pokeEnemyHp');
+    if(hpEl) hpEl.style.width = Math.max(0, enemy.hp/enemy.maxHp*100) + '%';
+    floatDmg(enemySprite, dmg);
+    log.textContent = enemy.name + ' took ' + dmg + ' damage!' + (move.debuff ? ' Accuracy reduced!' : '');
+    if(move.debuff) battleState.enemyDebuffed = true;
 
     setTimeout(() => {
       enemySprite.classList.remove('hurt');
       if(enemy.hp <= 0){
         enemySprite.classList.add('faint');
-        log.textContent = enemy.name + ' was defeated!';
-        state.scrap += 10 + Math.floor(Math.random()*8);
-        state.bio += 3;
+        log.textContent = enemy.name + ' was destroyed!';
+        state.scrap += 12 + Math.floor(Math.random()*10);
+        state.bio += 4;
+        if((state.buildings||[]).some(b=>b.id==='lab' && !b.building)) state.scrap += 5;
         unit.acted = true;
         state.selectedUnit = null;
         setTimeout(() => {
           closeDetail();
           if(state.enemies.every(e => e.hp <= 0)) endCombat(true);
           else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
-        }, 1000);
+        }, 1100);
         return;
       }
-
-      // Enemy turn
-      setTimeout(() => enemyPokeTurn(), 600);
-    }, 700);
-  }, 450);
+      // Enemy counter-attack
+      setTimeout(() => enemyPokeTurn(), 500);
+    }, 750);
+  }, 400);
 }
 
 function enemyPokeTurn(){
@@ -601,16 +833,34 @@ function enemyPokeTurn(){
   const playerSprite = document.getElementById('pokePlayerSprite');
   const enemySprite = document.getElementById('pokeEnemySprite');
 
-  const dmg = enemy.dmg + Math.floor(Math.random()*4) - 1;
-  log.textContent = enemy.name + ' attacks!';
-  enemySprite.classList.add('attack');
+  // Debuff reduces damage
+  let dmg = enemy.dmg + Math.floor(Math.random()*5) - 1;
+  if(battleState.enemyDebuffed){
+    dmg = Math.max(1, Math.floor(dmg * 0.6));
+    battleState.enemyDebuffed = false;
+  }
+  if(battleState.fortified){
+    dmg = Math.max(1, Math.floor(dmg * 0.5));
+    battleState.fortified = false;
+    if(log) log.textContent = 'Fortified! Damage reduced!';
+  }
+
+  const attacks = ['lunges', 'strikes', 'screeches and lashes', 'surges forward'];
+  const atkName = attacks[Math.floor(Math.random()*attacks.length)];
+  log.textContent = enemy.name + ' ' + atkName + '!';
+  enemySprite.classList.add('enemy-attack');
 
   setTimeout(() => {
-    enemySprite.classList.remove('attack');
+    enemySprite.classList.remove('enemy-attack');
     playerSprite.classList.add('hurt');
     unit.hp = Math.max(0, unit.hp - dmg);
-    state.sanity = Math.max(0, state.sanity - (state.leader?.bonus==='Hardened' ? Math.floor(enemy.sanDmg*0.6) : enemy.sanDmg));
-    document.getElementById('pokePlayerHp').style.width = Math.max(0, unit.hp/unit.maxHp*100) + '%';
+    const sanLoss = state.leader?.bonus==='Hardened' ? Math.floor(enemy.sanDmg*0.55) : enemy.sanDmg;
+    // Sanctuary reduces sanity loss
+    const finalSan = (state.buildings||[]).some(b=>b.id==='sanctuary' && !b.building) ? Math.floor(sanLoss*0.7) : sanLoss;
+    state.sanity = Math.max(0, state.sanity - finalSan);
+    const hpEl = document.getElementById('pokePlayerHp');
+    if(hpEl) hpEl.style.width = Math.max(0, unit.hp/unit.maxHp*100) + '%';
+    floatDmg(playerSprite, dmg);
     log.textContent = unit.name + ' took ' + dmg + ' damage!';
 
     setTimeout(() => {
@@ -620,21 +870,23 @@ function enemyPokeTurn(){
 
       if(unit.hp <= 0){
         playerSprite.classList.add('faint');
-        log.textContent = unit.name + ' was defeated!';
+        log.textContent = unit.name + ' has fallen!';
         setTimeout(() => {
           closeDetail();
-          showDetail('UNIT DOWN', `<div style="text-align:center"><img src="${unit.img}" style="width:90px;height:90px;object-fit:contain;filter:grayscale(1);opacity:0.5;margin-bottom:8px"><div style="color:var(--danger);font-weight:700">${unit.name}</div><div style="color:var(--muted)">Killed in action</div></div>`,
-            [{text:'Continue', action:()=>{
-              closeDetail();
-              const living = getCurrentSquad().filter(u=>u.hp>0);
-              if(living.length===0) endCombat(false);
-              else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
-            }}]);
-        }, 900);
+          showDetail('UNIT DOWN', `<div style="text-align:center;padding:10px">
+            <img src="${unit.img}" style="width:100px;height:100px;object-fit:contain;filter:grayscale(1);opacity:0.5;margin-bottom:10px">
+            <div style="color:var(--danger);font-weight:800;font-size:1.15rem">${unit.name}</div>
+            <div style="color:var(--muted);margin-top:6px">Killed in action against ${enemy.name}</div>
+          </div>`, [{text:'Continue', action:()=>{
+            closeDetail();
+            const living = getCurrentSquad().filter(u=>u.hp>0);
+            if(living.length===0) endCombat(false);
+            else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
+          }}]);
+        }, 1000);
         return;
       }
 
-      // Back to menu or close if acted
       setTimeout(() => {
         closeDetail();
         renderBattlefield();
@@ -642,8 +894,55 @@ function enemyPokeTurn(){
         updateRes();
         saveGame();
       }, 700);
-    }, 700);
-  }, 450);
+    }, 750);
+  }, 400);
+}
+
+function attemptFlee(){
+  if(!battleState){ closeDetail(); return; }
+  const { unit, enemy } = battleState;
+  const livingEnemies = state.enemies.filter(e=>e.hp>0).length;
+  const log = document.getElementById('pokeLog');
+
+  // Higher chance of being blocked with more enemies or high threat
+  if(battleState.smoke){
+    battleState.smoke = false;
+    if(log) log.textContent = unit.name + ' escapes under smoke cover!';
+    unit.acted = true; state.selectedUnit = null;
+    toast(unit.name + ' fled under smoke','ok');
+    setTimeout(()=>{ closeDetail(); renderBattlefield(); renderRight('squad'); }, 700);
+    return;
+  }
+  const blockChance = 0.25 + (livingEnemies * 0.12) + (enemy.hp > 80 ? 0.15 : 0);
+  const blocked = Math.random() < blockChance;
+
+  if(blocked){
+    if(log) log.textContent = enemy.name + ' blocks the escape route! You cannot flee!';
+    toast('Escape blocked by the enemy!','danger');
+    battleState.canFlee = false;
+    // Enemy gets a free attack for trying to run
+    setTimeout(() => {
+      if(log) log.textContent = 'The enemy punishes the retreat attempt...';
+      setTimeout(() => enemyPokeTurn(), 600);
+    }, 900);
+    return;
+  }
+
+  // Successful flee
+  if(log) log.textContent = unit.name + ' successfully disengages!';
+  unit.acted = true;
+  state.selectedUnit = null;
+  toast(unit.name + ' fled the engagement','ok');
+  setTimeout(() => {
+    closeDetail();
+    renderBattlefield();
+    renderRight('squad');
+  }, 800);
+}
+
+function closeBattleMenu(){
+  closeDetail();
+  // Don't mark as acted - player can re-select
 }
 
 function enemyTurn(){const livingE=state.enemies.filter(e=>e.hp>0),livingU=getCurrentSquad().filter(u=>u.hp>0);if(!livingE.length||!livingU.length)return;
@@ -690,8 +989,40 @@ function endCombat(victory){
   saveGame();
   renderAll();
 }
-function retreat(){if(state.retreatedThisTurn){toast('Already attempted','warn');return;}state.retreatedThisTurn=true;
-if(state.trapped||state.enemies.filter(e=>e.hp>0).length>=4){toast('Routes cut — need transport','danger');return;}endCombat(false);}
+function retreat(){
+  if(state.retreatedThisTurn){toast('Already attempted retreat this turn','warn');return;}
+  state.retreatedThisTurn=true;
+  const living = state.enemies.filter(e=>e.hp>0).length;
+  // Advanced block logic
+  if(state.trapped){
+    showDetail('ESCAPE BLOCKED', 'The Vorrh have surrounded your position. Routes are cut. You need a transport vehicle or must fight through.',
+      [{text:'Call Transport', action:()=>{closeDetail();callTransport();}},
+       {text:'Stand and Fight', action:closeDetail}]);
+    return;
+  }
+  if(living >= 4){
+    showDetail('OVERWHELMED', 'Too many hostiles. Your squad cannot break contact without support.',
+      [{text:'Call Transport', action:()=>{closeDetail();callTransport();}},
+       {text:'Continue Fighting', action:closeDetail}]);
+    return;
+  }
+  // Random chance of being stopped even with fewer enemies
+  if(living >= 2 && Math.random() < 0.35){
+    showDetail('AMBUSH', 'As you attempt to withdraw, a Vorrh cuts off the path. You are forced back into the fight!',
+      [{text:'Engage', action:()=>{closeDetail(); toast('Forced to stand your ground','danger');}}]);
+    // Enemy free attack on a random unit
+    const squad = getCurrentSquad().filter(u=>u.hp>0);
+    if(squad.length){
+      const tgt = squad[Math.floor(Math.random()*squad.length)];
+      const dmg = 8 + Math.floor(Math.random()*8);
+      tgt.hp = Math.max(0, tgt.hp - dmg);
+      toast(tgt.name + ' hit during retreat attempt (−'+dmg+')','danger');
+      renderBattlefield(); renderRight('squad');
+    }
+    return;
+  }
+  endCombat(false);
+}
 function callTransport(){const has=state.vehicles.some(v=>v.type==='transport');if(!has&&state.scrap<40){toast('Need APC or 40 Scrap','warn');return;}
 if(!has)state.scrap-=40;toast('Transport inbound','ok');endCombat(false);}
 function unlockNextSector(){const locked=state.sectors.find(s=>!s.unlocked);if(locked){locked.unlocked=true;locked.status='contested';addTx('Intel',`Unlocked: ${locked.name}`,'ok');toast(`Unlocked: ${locked.name}`,'ok');}}
@@ -749,11 +1080,64 @@ setInterval(updateScanButton, 1000);
 
 function updateRadarBlips(){const c=document.getElementById('radarCircle');if(!c)return;c.querySelectorAll('.radar-blip').forEach(b=>b.remove());state.radarContacts.forEach(p=>{const b=document.createElement('div');b.className='radar-blip';b.style.left=p.x+'%';b.style.top=p.y+'%';c.appendChild(b);});}
 function viewCam(dir){const events=['Static.','Movement in the treeline.','Heat signatures closing.','Clear.','A large shape passed.'];toast(`Cam ${dir}: ${events[Math.floor(Math.random()*events.length)]}`,'ok');}
-function openUnit(id,source){let u=source==='pool'?state.pool.find(x=>x.id===id):getCurrentSquad().find(x=>x.id===id);if(!u)return;
-let acts='';if(state.phase==='combat'&&!u.acted&&u.hp>0&&source==='sector')acts+=`<button class="btn primary" style="width:100%;margin-top:5px" onclick="state.selectedUnit='${u.id}';closeDetail();renderBattlefield();toast('${u.name} selected','ok')">Select for Attack</button>`;
-if(state.weapons.length){acts+=`<div style="margin-top:7px;font-size:.7rem;color:var(--muted)">Equip:</div>`;state.weapons.forEach(w=>{acts+=`<button class="btn" style="width:100%;margin-top:2px;font-size:.7rem" onclick="equipW('${u.id}','${w.id}','${source}')">${w.name} (DMG ${w.dmg})</button>`;});}
-if(source==='sector'&&state.phase==='outpost')acts+=`<button class="btn" style="width:100%;margin-top:5px" onclick="recallUnit('${u.id}')">Recall to Outpost</button>`;
-showDetail(u.name,`<img src="${u.img}" style="width:110px;height:110px;object-fit:contain;border-radius:8px;background:#0a0c12;margin-bottom:8px"><div style="font-size:.78rem;color:var(--muted)">${u.rank} • ${u.role}</div><div style="margin:6px 0">HP ${u.hp}/${u.maxHp} • Sanity ${u.san}/${u.maxSan}</div><div>Weapon: ${u.weapon?u.weapon.name:'Unarmed'}</div>${acts}`,[{text:'Close',action:closeDetail}]);}
+function openUnit(id,source){
+  let u=source==='pool'?state.pool.find(x=>x.id===id):getCurrentSquad().find(x=>x.id===id);
+  if(!u)return;
+  if(!u.upgrades) u.upgrades=[];
+  const moves = getMovesForUnit(u);
+  let movesHtml = '<div style="margin:10px 0 6px;font-size:0.72rem;color:var(--accent);font-weight:700">COMBAT LOADOUT</div>';
+  moves.forEach(m=>{
+    movesHtml += `<div style="background:var(--panel2);border-radius:5px;padding:6px 8px;margin-bottom:3px;font-size:0.75rem">
+      <strong>${m.name}</strong> <span style="color:var(--muted)">• ${m.type}</span>
+      <div style="color:var(--muted);font-size:0.68rem">${m.desc}${m.dmg? ' • DMG ~'+m.dmg:''}</div>
+    </div>`;
+  });
+
+  let acts='';
+  if(state.phase==='combat'&&!u.acted&&u.hp>0&&source==='sector')
+    acts+=`<button class="btn primary" style="width:100%;margin-top:5px" onclick="state.selectedUnit='${u.id}';closeDetail();renderBattlefield();toast('${u.name} selected','ok')">Select for Attack</button>`;
+  if(state.weapons.length){
+    acts+=`<div style="margin-top:7px;font-size:.7rem;color:var(--muted)">Equip weapon:</div>`;
+    state.weapons.forEach(w=>{
+      acts+=`<button class="btn" style="width:100%;margin-top:2px;font-size:.7rem" onclick="equipW('${u.id}','${w.id}','${source}')">${w.name} (DMG ${w.dmg})</button>`;
+    });
+  }
+  // Upgrades
+  acts+=`<div style="margin-top:10px;font-size:.7rem;color:var(--muted)">Training upgrades:</div>`;
+  if(!u.upgrades.includes('veteran'))
+    acts+=`<button class="btn" style="width:100%;margin-top:2px;font-size:.7rem" onclick="upgradeUnit('${u.id}','${source}','veteran',30)">Veteran Training (30⚙️) — +10% all damage</button>`;
+  if(!u.upgrades.includes('overcharge'))
+    acts+=`<button class="btn" style="width:100%;margin-top:2px;font-size:.7rem" onclick="upgradeUnit('${u.id}','${source}','overcharge',25)">Weapon Overcharge (25⚙️) — +15% primary</button>`;
+  if(u.upgrades.length)
+    acts+=`<div style="font-size:0.68rem;color:var(--ok);margin-top:4px">Upgrades: ${u.upgrades.join(', ')}</div>`;
+
+  if(source==='sector'&&state.phase==='outpost')
+    acts+=`<button class="btn" style="width:100%;margin-top:5px" onclick="recallUnit('${u.id}')">Recall to Outpost</button>`;
+
+  showDetail(u.name, `
+    <img src="${u.img}" style="width:110px;height:110px;object-fit:contain;border-radius:8px;background:#0a0c12;margin-bottom:8px">
+    <div style="font-size:.78rem;color:var(--muted)">${u.rank} • ${u.role}</div>
+    <div style="margin:6px 0">HP ${u.hp}/${u.maxHp} • Sanity ${u.san}/${u.maxSan}</div>
+    <div>Weapon: ${u.weapon?u.weapon.name:'Unarmed'}</div>
+    ${movesHtml}
+    ${acts}
+  `,[{text:'Close',action:closeDetail}]);
+}
+function upgradeUnit(uid, source, up, cost){
+  if(state.scrap < cost){toast('Need '+cost+' Scrap','warn');return;}
+  const list = source==='pool'?state.pool:getCurrentSquad();
+  const u = list.find(x=>x.id===uid);
+  if(!u)return;
+  if(!u.upgrades) u.upgrades=[];
+  if(u.upgrades.includes(up)){toast('Already trained','warn');return;}
+  state.scrap -= cost;
+  u.upgrades.push(up);
+  toast(u.name + ' gained '+up+' training','ok');
+  updateRes(); saveGame();
+  closeDetail();
+  openUnit(uid, source);
+}
+
 function equipW(uid,wid,source){const list=source==='pool'?state.pool:getCurrentSquad();const u=list.find(x=>x.id===uid);const w=state.weapons.find(x=>x.id===wid);if(!u||!w)return;
 if(u.weapon)state.weapons.push(u.weapon);u.weapon=w;state.weapons=state.weapons.filter(x=>x.id!==wid);toast(`${u.name} equipped ${w.name}`,'ok');closeDetail();renderRight('squad');}
 function recallUnit(id){const squad=getCurrentSquad();const idx=squad.findIndex(u=>u.id===id);if(idx<0)return;const u=squad.splice(idx,1)[0];u.sector=null;state.pool.push(u);toast(`${u.name} recalled`,'ok');closeDetail();renderAll();}
@@ -890,49 +1274,95 @@ function recruitUnit(type){
 }
 
 
+
 function openTravel(){
   const unlocked = state.sectors.filter(s=>s.unlocked);
-  let body = '<div style="font-size:.8rem;color:var(--muted);margin-bottom:10px">Select destination sector. Travel takes a moment.</div>';
-  unlocked.forEach(s=>{
-    body += `<button class="btn" style="width:100%;margin-top:4px" onclick="doTravel('${s.id}')">${s.name} ${s.id===state.currentSector?'(current)':''}</button>`;
-  });
-  showDetail('Ship Travel', body, [{text:'Cancel', action:closeDetail}]);
-}
-function doTravel(id){
-  if(id===state.currentSector){toast('Already here','warn');return;}
-  closeDetail();
-  // Travel animation modal
-  showDetail('In Transit', `
-    <div style="text-align:center;padding:20px 0">
-      <div style="font-size:2rem;margin-bottom:12px">🚀</div>
-      <div style="font-size:.9rem;margin-bottom:8px">Leaving orbit...</div>
-      <div class="atk-bar"><div class="atk-fill" id="travelBar" style="width:0%"></div></div>
-      <div id="travelLog" style="font-size:.8rem;color:var(--muted);margin-top:8px">Plotting course</div>
+  let body = `
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:12px;line-height:1.45">
+      Plot a course to another sector. Your command ship will transit through atmosphere and low orbit.
+      Deployed squads remain in their sectors.
     </div>
-  `, []);
+    <div style="display:grid;gap:6px">
+  `;
+  unlocked.forEach(s=>{
+    const deployed = (state.sectorSquads[s.id]||[]).filter(u=>u.hp>0).length;
+    const isHere = s.id===state.currentSector;
+    body += `<button class="btn ${isHere?'':'primary'}" style="width:100%;text-align:left;padding:12px" onclick="doTravel('${s.id}')" ${isHere?'disabled':''}>
+      <strong>${s.name}</strong>
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${s.desc} ${deployed?'• '+deployed+' deployed':''} ${isHere?'• CURRENT':''}</div>
+    </button>`;
+  });
+  body += '</div>';
+  showDetail('Navigation — Command Ship', body, [{text:'Cancel', action:closeDetail}]);
+}
+
+function doTravel(id){
+  if(id===state.currentSector){toast('Already at this sector','warn');return;}
+  const dest = state.sectors.find(s=>s.id===id);
+  if(!dest) return;
+  closeDetail();
+
+  const box = document.getElementById('detailBox');
+  box.classList.add('wide', 'battle-modal');
+  box.innerHTML = `
+    <div class="travel-scene">
+      <div class="travel-stars"></div>
+      <div class="travel-planet" id="travelPlanet"></div>
+      <div class="travel-ship" id="travelShip">🚀</div>
+      <div class="travel-status" id="travelStatus">Preparing launch sequence...</div>
+      <div class="travel-bar-wrap">
+        <div class="atk-bar"><div class="atk-fill" id="travelBar" style="width:0%;transition:width 0.8s linear"></div></div>
+      </div>
+      <div id="travelLog" style="font-size:0.78rem;color:var(--muted);position:relative;z-index:2">Fuel cells online</div>
+    </div>
+  `;
+  document.getElementById('detailOverlay').classList.add('active');
+
   const bar = document.getElementById('travelBar');
   const log = document.getElementById('travelLog');
-  const steps = [
-    {pct:25, text:'Leaving atmosphere...'},
-    {pct:50, text:'Entering transit corridor...'},
-    {pct:75, text:'Approaching destination...'},
-    {pct:100, text:'Landing sequence'}
+  const status = document.getElementById('travelStatus');
+  const ship = document.getElementById('travelShip');
+  const planet = document.getElementById('travelPlanet');
+
+  const stages = [
+    {pct:10, status:'Launch clearance granted', log:'Thrusters priming...', delay:700},
+    {pct:25, status:'Leaving atmosphere', log:'Altitude climbing — 2km', delay:900, launch:true},
+    {pct:45, status:'Entering transit corridor', log:'Nav lock on '+dest.name, delay:1000, depart:true},
+    {pct:65, status:'Mid-course correction', log:'Scanning for Vorrh signatures...', delay:900},
+    {pct:80, status:'Approaching destination', log:'Visual on '+dest.name, delay:800, arrive:true},
+    {pct:100, status:'Landing sequence', log:'Touchdown in 3... 2... 1...', delay:1000}
   ];
-  let i=0;
+
+  let i = 0;
   function step(){
-    if(i>=steps.length){
+    if(i >= stages.length){
       selectSector(id);
-      closeDetail();
-      toast('Arrived at '+(state.sectors.find(s=>s.id===id)||{}).name,'ok');
-      saveGame();
+      setTimeout(()=>{
+        closeDetail();
+        toast('Arrived at '+dest.name,'ok');
+        addTx('Nav', 'Command ship on station at '+dest.name+'.','ok');
+        saveGame();
+      }, 400);
       return;
     }
-    bar.style.width = steps[i].pct+'%';
-    log.textContent = steps[i].text;
+    const s = stages[i];
+    bar.style.width = s.pct + '%';
+    status.textContent = s.status;
+    log.textContent = s.log;
+    if(s.launch) ship.classList.add('launching');
+    if(s.depart) planet.classList.add('depart');
+    if(s.arrive){
+      planet.classList.remove('depart');
+      planet.classList.add('arrive');
+      ship.classList.remove('launching');
+      ship.style.animation = 'shipBob 2s ease-in-out infinite';
+      ship.style.opacity = '1';
+      ship.style.transform = 'none';
+    }
     i++;
-    setTimeout(step, 700);
+    setTimeout(step, s.delay);
   }
-  setTimeout(step, 400);
+  setTimeout(step, 500);
 }
 
 function showWeaponDetail(w){
