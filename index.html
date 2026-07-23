@@ -541,7 +541,7 @@ else{state.vehicles.forEach(v=>{const el=document.createElement('div');el.classN
 state.transmissions.slice().reverse().forEach(t=>{const el=document.createElement('div');el.className='tx-item '+(t.type||'');el.innerHTML=`<div class="tx-time">${t.from} — ${t.time}</div>${t.msg}`;p.appendChild(el);});}
 }
 function makeUnitCard(u){const el=document.createElement('div');el.className='unit-card'+(u.acted?' acted':'')+(state.selectedUnit===u.id?' selected':'');
-const hp=Math.max(0,(u.hp/u.maxHp)*100);const san=Math.max(0,(u.san/u.maxSan)*100);
+if(u.hp<0)u.hp=0;if(u.san<0)u.san=0;const hp=Math.max(0,(u.hp/u.maxHp)*100);const san=Math.max(0,(u.san/u.maxSan)*100);
 el.innerHTML=`<img src="${u.img}"><div style="flex:1;min-width:0"><div class="unit-name">${u.name}</div><div class="unit-role">${u.rank} • ${u.role}</div><div class="bar"><div class="bar-fill hp-fill" style="width:${hp}%"></div></div><div class="bar"><div class="bar-fill san-fill" style="width:${san}%"></div></div></div>`;return el;}
 function renderBattlefield(){
 const ps=document.getElementById('playerSide'),es=document.getElementById('enemySide');ps.innerHTML='';es.innerHTML='';
@@ -561,25 +561,95 @@ function selectSector(id){const s=state.sectors.find(x=>x.id===id);if(!s||!s.unl
 document.getElementById('missionTitle').textContent=s.name;document.getElementById('missionSub').textContent=s.desc+(state.sectorSquads[id]?.length?` • ${state.sectorSquads[id].length} deployed`:'');
 if(state.phase==='combat'){state.phase='outpost';state.enemies=[];document.getElementById('missionPhase').textContent='OUTPOST';document.getElementById('btnDeploy').style.display='inline-block';document.getElementById('btnEndTurn').style.display='none';document.getElementById('btnRetreat').style.display='none';document.getElementById('btnExtract').style.display='none';}
 renderAll();}
+
+function openSquadSelect(){
+  const living = state.pool.filter(u => u.hp > 0);
+  if(!living.length){toast('No living units','danger');return;}
+  window._squadSel = new Set();
+
+  let body = `<div style="font-size:0.8rem;color:var(--muted);margin-bottom:10px">Select up to 4 soldiers for this squad. Click to toggle.</div><div id="squadPickList">`;
+  living.forEach(u => {
+    body += `<div class="unit-card" id="pick_${u.id}" onclick="toggleSquadPick('${u.id}')" style="cursor:pointer">
+      <img src="${u.img}" style="width:48px;height:48px;object-fit:contain;border-radius:4px;background:#0a0c12">
+      <div style="flex:1"><div class="unit-name">${u.name}</div>
+      <div class="unit-role">${u.rank} • ${u.role} • HP ${u.hp}/${u.maxHp}</div></div>
+      <div id="chk_${u.id}" style="font-size:1.2rem;color:var(--muted)">☐</div>
+    </div>`;
+  });
+  body += `</div>
+  <div style="margin-top:10px">
+    <label style="font-size:0.75rem;color:var(--muted)">Squad name:</label>
+    <input id="squadNameInput" value="Alpha" style="width:100%;margin-top:4px;padding:8px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.9rem">
+  </div>`;
+
+  showDetail('Assemble Squad', body, [
+    {text:'DEPLOY SELECTED', action: confirmSquadDeploy},
+    {text:'Cancel', action: closeDetail}
+  ]);
+}
+function toggleSquadPick(id){
+  if(!window._squadSel) window._squadSel = new Set();
+  const card = document.getElementById('pick_'+id);
+  const chk = document.getElementById('chk_'+id);
+  if(window._squadSel.has(id)){
+    window._squadSel.delete(id);
+    if(card) card.style.borderColor = '';
+    if(chk){ chk.textContent = '☐'; chk.style.color = 'var(--muted)'; }
+  } else {
+    if(window._squadSel.size >= 4){toast('Max 4 soldiers per squad','warn');return;}
+    window._squadSel.add(id);
+    if(card) card.style.borderColor = 'var(--accent)';
+    if(chk){ chk.textContent = '☑'; chk.style.color = 'var(--accent)'; }
+  }
+}
+function confirmSquadDeploy(){
+  if(!window._squadSel || window._squadSel.size === 0){toast('Select at least one soldier','warn');return;}
+  const nameInput = document.getElementById('squadNameInput');
+  const names = ['Alpha','Bravo','Charlie','Delta','Echo','Foxtrot','Golf','Hotel'];
+  const used = Object.values(state.namedSquads||{});
+  let squadName = (nameInput && nameInput.value.trim()) || names.find(n=>!used.includes(n)) || 'Squad';
+  
+  const selected = [];
+  state.pool = state.pool.filter(u => {
+    if(window._squadSel.has(u.id) && u.hp > 0){
+      u.sector = state.currentSector;
+      u.acted = false;
+      selected.push(u);
+      return false;
+    }
+    return true;
+  });
+  state.sectorSquads[state.currentSector] = selected;
+  if(!state.namedSquads) state.namedSquads = {};
+  state.namedSquads[state.currentSector] = squadName;
+  closeDetail();
+  toast('Squad '+squadName+' deployed ('+selected.length+' units)','ok');
+  saveGame();
+  // Continue into combat check
+  const squad = getCurrentSquad().filter(u=>u.hp>0);
+  if(!squad.length){toast('No living units in this sector','danger');return;}
+  if(Math.random()<0.2&&state.mission>0){
+    addTx('Unknown','Command... we found— ████ *screaming*','danger', true);
+    showDetail('Distress Signal','A previous transmission just cut out mid-sentence.',[
+      {text:'Investigate',action:()=>{closeDetail();beginCombat();}},
+      {text:'Proceed carefully',action:()=>{closeDetail();beginCombat();}}
+    ]);
+    return;
+  }
+  beginCombat();
+}
+
+
 function tryDeploy(){
 if(!state.currentSector){toast('Select a sector first','warn');return;}
 if(!state.sectorSquads[state.currentSector]||!state.sectorSquads[state.currentSector].length){
-if(!state.pool.length){toast('No units available at outpost','danger');return;}
-// Name the squad
-const names = ['Alpha','Bravo','Charlie','Delta','Echo','Foxtrot','Golf','Hotel'];
-const used = Object.values(state.namedSquads||{});
-const available = names.filter(n=>!used.includes(n));
-const squadName = available[0] || ('Squad-'+Date.now().toString().slice(-4));
-const toDeploy=state.pool.splice(0,Math.min(4,state.pool.length));
-toDeploy.forEach(u=>{u.sector=state.currentSector;u.acted=false;});
-state.sectorSquads[state.currentSector]=toDeploy;
-if(!state.namedSquads) state.namedSquads={};
-state.namedSquads[state.currentSector]=squadName;
-toast(`Squad ${squadName} deployed (${toDeploy.length} units)`,'ok');
-saveGame();
+if(!state.pool.filter(u=>u.hp>0).length){toast('No living units at outpost','danger');return;}
+openSquadSelect();
+return;
 }
+
 const squad=getCurrentSquad().filter(u=>u.hp>0);if(!squad.length){toast('No living units in this sector','danger');return;}
-if(Math.random()<0.2&&state.mission>0){addTx('Unknown','Command... we found— ████ *screaming*','danger');
+if(Math.random()<0.2&&state.mission>0){addTx('Unknown','Command... we found— ████ *screaming*','danger', true);
 showDetail('Distress Signal','A previous transmission just cut out mid-sentence.',[{text:'Investigate',action:()=>{closeDetail();beginCombat();}},{text:'Proceed carefully',action:()=>{closeDetail();beginCombat();}}]);return;}
 beginCombat();
 }
@@ -804,6 +874,7 @@ function executePokeMove(move){
     setTimeout(() => {
       enemySprite.classList.remove('hurt');
       if(enemy.hp <= 0){
+        enemy.hp = 0;
         enemySprite.classList.add('faint');
         log.textContent = enemy.name + ' was destroyed!';
         state.scrap += 12 + Math.floor(Math.random()*10);
@@ -811,6 +882,7 @@ function executePokeMove(move){
         if((state.buildings||[]).some(b=>b.id==='lab' && !b.building)) state.scrap += 5;
         unit.acted = true;
         state.selectedUnit = null;
+        battleState = null; // prevent any further enemy turns
         setTimeout(() => {
           closeDetail();
           if(state.enemies.every(e => e.hp <= 0)) endCombat(true);
@@ -827,7 +899,7 @@ function executePokeMove(move){
 function enemyPokeTurn(){
   if(!battleState) return;
   const { unit, enemy } = battleState;
-  if(enemy.hp <= 0 || unit.hp <= 0) return;
+  if(!unit || !enemy || enemy.hp <= 0 || unit.hp <= 0) return;
 
   const log = document.getElementById('pokeLog');
   const playerSprite = document.getElementById('pokePlayerSprite');
@@ -854,14 +926,24 @@ function enemyPokeTurn(){
     enemySprite.classList.remove('enemy-attack');
     playerSprite.classList.add('hurt');
     unit.hp = Math.max(0, unit.hp - dmg);
+    // Force exact 0 display when dead
+    if(unit.hp <= 0) unit.hp = 0;
     const sanLoss = state.leader?.bonus==='Hardened' ? Math.floor(enemy.sanDmg*0.55) : enemy.sanDmg;
-    // Sanctuary reduces sanity loss
     const finalSan = (state.buildings||[]).some(b=>b.id==='sanctuary' && !b.building) ? Math.floor(sanLoss*0.7) : sanLoss;
     state.sanity = Math.max(0, state.sanity - finalSan);
     const hpEl = document.getElementById('pokePlayerHp');
-    if(hpEl) hpEl.style.width = Math.max(0, unit.hp/unit.maxHp*100) + '%';
+    if(hpEl) {
+      hpEl.style.width = (unit.hp <= 0 ? 0 : Math.max(0, unit.hp/unit.maxHp*100)) + '%';
+    }
+    // Update HP text if present
+    const hpBox = hpEl ? hpEl.closest('.poke-hp-box') : null;
+    if(hpBox){
+      const txt = hpBox.querySelector('div[style*="font-size:0.7rem"]');
+      if(txt) txt.textContent = Math.max(0, unit.hp) + ' / ' + unit.maxHp + ' HP';
+    }
     floatDmg(playerSprite, dmg);
-    log.textContent = unit.name + ' took ' + dmg + ' damage!';
+    log.textContent = unit.name + ' took ' + dmg + ' damage!' + (unit.hp<=0 ? ' — FATAL' : '');
+
 
     setTimeout(() => {
       playerSprite.classList.remove('hurt');
@@ -1032,7 +1114,35 @@ function buyMark3(){if(state.scrap<MARK3.cost){toast('Need 85 Scrap','warn');ret
 state.pool.push({id:'m3_'+Date.now(),name:MARK3.name,rank:MARK3.rank,role:MARK3.role,img:MARK3.img,hp:MARK3.hp,maxHp:MARK3.hp,san:MARK3.san,maxSan:MARK3.san,weapon:null,status:'stable',acted:false,sector:null});
 toast('Mark-3 Heavy acquired','ok');updateRes();renderLeft('store');renderRight('squad');}
 function buyVehicle(v){if(state.scrap<v.cost){toast('Not enough Scrap','warn');return;}state.scrap-=v.cost;state.vehicles.push({...v,deployed:false});toast(`Acquired ${v.name}`,'ok');updateRes();renderRight('vehicles');}
-function addTx(from,msg,type=''){const now=new Date();state.transmissions.push({from,msg,type,time:now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0')});if(state.transmissions.length>25)state.transmissions.shift();}
+function addTx(from,msg,type='',showRadio=false){
+  const now=new Date();
+  const time=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  state.transmissions.push({from,msg,type,time});
+  if(state.transmissions.length>25) state.transmissions.shift();
+  // Show radio popup for important messages
+  if(showRadio || type==='danger' || type==='warn'){
+    showRadioMessage(from, msg, type, time);
+  }
+}
+function showRadioMessage(from, msg, type, time){
+  // Don't interrupt active battle or travel
+  if(battleState) return;
+  const overlay = document.getElementById('detailOverlay');
+  if(overlay && overlay.classList.contains('active')) return; // don't stack
+
+  const color = type==='danger' ? 'var(--danger)' : type==='warn' ? 'var(--warn)' : 'var(--accent2)';
+  showDetail('📡 INCOMING TRANSMISSION', `
+    <div style="background:#0a1210;border:1px solid ${color};border-radius:8px;padding:14px;text-align:left">
+      <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+        <span style="color:${color};font-weight:800;font-size:0.85rem">${from}</span>
+        <span style="color:var(--muted);font-size:0.7rem">${time||''}</span>
+      </div>
+      <div style="font-size:0.9rem;line-height:1.5;font-family:monospace;color:var(--text)">${msg}</div>
+      <div style="margin-top:10px;font-size:0.65rem;color:var(--muted)">— END OF TRANSMISSION —</div>
+    </div>
+  `, [{text:'Acknowledge', action:closeDetail}]);
+}
+
 function runScan(){
   const now = Date.now();
   const cd = 120000; // 2 minutes
