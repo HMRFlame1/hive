@@ -437,17 +437,19 @@ let state={leader:null,scrap:100,bio:40,void:15,sanity:100,pool:[],sectorSquads:
 const STORY = {
   intro: {
     id: 'intro',
-    title: 'BRIEFING — SURFACE LOST',
+    title: 'LAST TRANSMISSION',
     lines: [
-      { who: 'leader', text: 'The colony is gone. Not occupied — converted. We watched the last city lights go dark on the scope and then the scopes went dark too.' },
-      { who: 'sarge', text: 'My squad held a corridor for six hours. When the ammo ran out, the walls started screaming. Not the men. The walls.' },
-      { who: 'duke', text: 'I\'ve been in the fog belt. They don\'t leave bodies. They leave... revisions. People you knew, wearing the same face, wrong behind the eyes.' },
-      { who: 'leader', text: 'Command is silent. Orbit is silent. We are the last organised guns on this rock. Hold the outpost. Expand when you can. And if you hear the song — do not listen.' }
+      { who: 'sarge', text: 'If anyone is still listening, this is Sergeant Harlan, residual command, surface theatre.' },
+      { who: 'sarge', text: 'The colony did not fall in a day. It was quieter than that. People went missing on the outer pads. Then the missing came back, same faces, wrong eyes.' },
+      { who: 'sarge', text: 'We held a corridor for six hours when the first wave hit. When the ammo ran out, the walls themselves started screaming. Not us. The walls.' },
+      { who: 'sarge', text: 'Command went dark. Orbit went dark. The fog carries a song now. If you hear it, do not listen. Do not answer.' },
+      { who: 'sarge', text: 'We still have an outpost. We still have guns. That is the whole strategy. Hold ground. Expand when you can. Burn what does not stay dead.' },
+      { who: 'sarge', text: 'This is the last organised force on the rock. Make it count.' }
     ]
   },
   first_victory: {
     id: 'first_victory',
-    title: 'AFTER ACTION — BLOOD ON THE RIDGE',
+    title: 'AFTER ACTION , BLOOD ON THE RIDGE',
     lines: [
       { who: 'leader', text: 'Sector clear. For now. Burn the remains. Don\'t leave anything that can stand back up.' },
       { who: 'susan', text: 'Two walking wounded. One won\'t stop scratching at his neck. I sedated him. If he turns, I\'ll handle it.' },
@@ -457,17 +459,17 @@ const STORY = {
   },
   first_loss: {
     id: 'first_loss',
-    title: 'AFTERMATH — NAMES ON THE WALL',
+    title: 'AFTERMATH , NAMES ON THE WALL',
     lines: [
       { who: 'leader', text: 'We left people out there. Say their names once. Then put them away. Grief gets you killed.' },
       { who: 'mike', text: 'They knew the contract. So did I. Next drop I go first.' },
-      { who: 'savannah', text: 'The signal that hit them wasn\'t random. Something under the crust is coordinating. I can map it — if you give me time and blood samples.' },
+      { who: 'savannah', text: 'The signal that hit them wasn\'t random. Something under the crust is coordinating. I can map it , if you give me time and blood samples.' },
       { who: 'leader', text: 'You get both. No more blind walks into the fog.' }
     ]
   },
   charlie_unlock: {
     id: 'charlie_unlock',
-    title: 'INTEL — CHARLIE SPIRE',
+    title: 'INTEL , CHARLIE SPIRE',
     lines: [
       { who: 'duke', text: 'Charlie Spire just bloomed on thermal. Whole summit crawling. They\'re nesting in the old relay tower.' },
       { who: 'vanessa', text: 'If they keep the high ground they see every approach into the basin. We take the Spire or we fight uphill forever.' },
@@ -477,9 +479,9 @@ const STORY = {
   },
   mid_game: {
     id: 'mid_game',
-    title: 'THE PATTERN — ECHO DEPTHS',
+    title: 'THE PATTERN , ECHO DEPTHS',
     lines: [
-      { who: 'savannah', text: 'I cracked a fragment of their chatter. It isn\'t language. It\'s architecture. They\'re building a lattice under Echo Depths — a planetary nervous system.' },
+      { who: 'savannah', text: 'I cracked a fragment of their chatter. It isn\'t language. It\'s architecture. They\'re building a lattice under Echo Depths , a planetary nervous system.' },
       { who: 'leader', text: 'To what end?' },
       { who: 'savannah', text: 'When it completes, every converted body on this world becomes one mind. One will. Ours included, if we\'re still here.' },
       { who: 'susan', text: 'Then we cut the spine before the brain wakes. I don\'t care how deep we have to go.' },
@@ -488,7 +490,7 @@ const STORY = {
   },
   late_game: {
     id: 'late_game',
-    title: 'FINAL GATE — FOXTROT',
+    title: 'FINAL GATE , FOXTROT',
     lines: [
       { who: 'leader', text: 'Foxtrot Gate is the last door. Beyond it is the core. Half our roster is gone. The other half is running on stims, spite, and borrowed time.' },
       { who: 'mike', text: 'Spite\'s kept me alive through three wars. It\'ll do for one more door.' },
@@ -683,7 +685,7 @@ if(state.leader.bonus==='Tactical')startIds.push('van2');
 if(startIds.length<3)startIds.push('sarge');
 state.pool=startIds.map((id,i)=>{
 const s=SOLDIERS.find(x=>x.id===id)||SOLDIERS[0];
-return{id:'u'+i,name:s.name,rank:s.rank,role:s.role,img:s.img,hp:s.hp+(state.leader.bonus==='Assault'?10:0),maxHp:s.hp+(state.leader.bonus==='Assault'?10:0),san:s.san,maxSan:s.san,weapon:null,status:'stable',acted:false,sector:null,upgrades:[]};
+return{id:'u'+i,name:s.name,rank:s.rank,role:s.role,img:s.img,hp:100+(state.leader.bonus==='Assault'?20:0),maxHp:100+(state.leader.bonus==='Assault'?20:0),san:s.san,maxSan:s.san,weapon:null,status:'stable',acted:false,sector:null,upgrades:[]};
 });
 state.weapons=[{id:'sw1',name:'M251 Pulse',dmg:16,effect:'standard',img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/m5_orig.png'}];
 document.getElementById('titleScreen').classList.remove('active');
@@ -994,7 +996,7 @@ function performAttack(unitId, enemyIdx){
   unit.hp = Number(unit.hp); unit.maxHp = Number(unit.maxHp) || 100;
   enemy.hp = Number(enemy.hp); enemy.maxHp = Number(enemy.maxHp) || enemy.hp;
   if(unit.hp <= 0){ toast(unit.name + ' is already down','warn'); return; }
-  battleState = { unit, enemyIdx, enemy, turn: 'player', canFlee: true };
+  battleState = { unit, enemyIdx, enemy, turn: 'player', canFlee: true, gen: Date.now() };
   openPokeBattle(unit, enemy);
 }
 
@@ -1141,63 +1143,54 @@ function executePokeMove(move){
 
 function enemyPokeTurn(){
   if(!battleState) return;
+  const myGen = battleState.gen;
   const unit = battleState.unit;
   const enemy = battleState.enemy;
   if(!unit || !enemy) return;
-  // Ensure numeric HP
-  unit.hp = Number(unit.hp);
+  unit.hp = Number(unit.hp) || 0;
   unit.maxHp = Number(unit.maxHp) || 100;
-  enemy.hp = Number(enemy.hp);
+  enemy.hp = Number(enemy.hp) || 0;
   if(enemy.hp <= 0 || unit.hp <= 0) return;
 
   const log = document.getElementById('pokeLog');
   const playerSprite = document.getElementById('pokePlayerSprite');
   const enemySprite = document.getElementById('pokeEnemySprite');
 
-  // Damage: 8-20 range typically, never more than 40% of max HP
-  let dmg = Number(enemy.dmg) || 10;
-  dmg = dmg + Math.floor(Math.random()*4);
-  dmg = Math.max(1, Math.min(dmg, Math.floor(unit.maxHp * 0.4)));
-  if(battleState.enemyDebuffed){
-    dmg = Math.max(1, Math.floor(dmg * 0.6));
-    battleState.enemyDebuffed = false;
-  }
-  if(battleState.fortified){
-    dmg = Math.max(1, Math.floor(dmg * 0.5));
-    battleState.fortified = false;
-  }
+  // Fixed modest damage: 6-14 typically
+  let dmg = 6 + Math.floor(Math.random() * 9);
+  if(enemy.dmg && enemy.dmg > 15) dmg += 2; // elites hit a bit harder
+  if(battleState.enemyDebuffed){ dmg = Math.max(1, Math.floor(dmg * 0.6)); battleState.enemyDebuffed = false; }
+  if(battleState.fortified){ dmg = Math.max(1, Math.floor(dmg * 0.5)); battleState.fortified = false; }
 
   const attacks = ['lunges', 'strikes', 'screeches and lashes', 'surges forward'];
-  const atkName = attacks[Math.floor(Math.random()*attacks.length)];
-  if(log) log.textContent = enemy.name + ' ' + atkName + '!';
+  if(log) log.textContent = enemy.name + ' ' + attacks[Math.floor(Math.random()*attacks.length)] + '!';
   if(enemySprite) enemySprite.classList.add('enemy-attack');
 
   setTimeout(() => {
+    // Stale battle guard
+    if(!battleState || battleState.gen !== myGen) return;
     if(enemySprite) enemySprite.classList.remove('enemy-attack');
     if(playerSprite) playerSprite.classList.add('hurt');
 
-    const prevHp = unit.hp;
+    const prevHp = Number(unit.hp);
     unit.hp = Math.max(0, prevHp - dmg);
-    // DO NOT force kill — only die if HP actually reaches 0
 
-    const sanLoss = state.leader?.bonus==='Hardened' ? Math.floor((enemy.sanDmg||5)*0.55) : (enemy.sanDmg||5);
-    const finalSan = (state.buildings||[]).some(b=>b.id==='sanctuary' && !b.building) ? Math.floor(sanLoss*0.7) : sanLoss;
-    state.sanity = Math.max(0, state.sanity - finalSan);
+    const sanLoss = state.leader && state.leader.bonus==='Hardened' ? Math.floor((enemy.sanDmg||5)*0.55) : (enemy.sanDmg||5);
+    state.sanity = Math.max(0, state.sanity - sanLoss);
 
-    const pct = unit.hp <= 0 ? 0 : Math.min(100, (unit.hp / unit.maxHp) * 100);
+    const pct = unit.maxHp > 0 ? Math.min(100, Math.max(0, (unit.hp / unit.maxHp) * 100)) : 0;
     const hpEl = document.getElementById('pokePlayerHp');
-    if(hpEl){
-      hpEl.style.width = pct + '%';
-    }
+    if(hpEl) hpEl.style.width = pct + '%';
     document.querySelectorAll('.poke-player .poke-hp-box div').forEach(el=>{
       if(el.textContent && /\d+\s*\/\s*\d+/.test(el.textContent)){
-        el.textContent = unit.hp + ' / ' + unit.maxHp + ' HP';
+        el.textContent = Math.floor(unit.hp) + ' / ' + unit.maxHp + ' HP';
       }
     });
     floatDmg(playerSprite, dmg);
-    if(log) log.textContent = unit.name + ' took ' + dmg + ' damage! (' + prevHp + ' → ' + unit.hp + ' HP)' + (unit.hp<=0 ? ' — FATAL' : '');
+    if(log) log.textContent = unit.name + ' took ' + dmg + ' damage! (' + Math.floor(prevHp) + ' to ' + Math.floor(unit.hp) + ' HP)' + (unit.hp<=0 ? ' FATAL' : '');
 
     setTimeout(() => {
+      if(!battleState || battleState.gen !== myGen) return;
       if(playerSprite) playerSprite.classList.remove('hurt');
       unit.acted = true;
       state.selectedUnit = null;
@@ -1206,35 +1199,31 @@ function enemyPokeTurn(){
         unit.hp = 0;
         if(playerSprite) playerSprite.classList.add('faint');
         if(log) log.textContent = unit.name + ' has fallen!';
+        const deadUnit = unit;
+        const killer = enemy.name;
+        battleState = null;
         setTimeout(() => {
           closeDetail();
-          battleState = null;
-          showDetail('UNIT DOWN', `<div class="death-scene">
-            <img src="${unit.img}" alt="">
-            <div style="color:var(--danger);font-weight:900;font-size:1.2rem;letter-spacing:1px">KIA</div>
-            <div style="font-weight:800;font-size:1.05rem;margin-top:6px">${unit.name}</div>
-            <div style="color:var(--muted);margin-top:6px;font-size:0.85rem">Killed in action by ${enemy.name}</div>
-            <div style="color:var(--muted);font-size:0.75rem;margin-top:4px">${unit.rank} • ${unit.role}</div>
-          </div>`, [{text:'Continue', action:()=>{
-            closeDetail();
-            const living = getCurrentSquad().filter(u=>u.hp>0);
-            if(living.length===0){
-              playSquadWipe(getCurrentSquad(), enemy.name);
-            } else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
-          }}]);
-        }, 1000);
+          showDetail('UNIT DOWN', '<div class="death-scene"><img src="'+deadUnit.img+'" alt=""><div style="color:var(--danger);font-weight:900;font-size:1.2rem">KIA</div><div style="font-weight:800;font-size:1.05rem;margin-top:6px">'+deadUnit.name+'</div><div style="color:var(--muted);margin-top:6px;font-size:0.85rem">Killed in action by '+killer+'</div></div>',
+            [{text:'Continue', action:()=>{
+              closeDetail();
+              const living = getCurrentSquad().filter(u=>u.hp>0);
+              if(living.length===0) playSquadWipe(getCurrentSquad(), killer);
+              else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
+            }}]);
+        }, 900);
         return;
       }
 
+      battleState = null;
       setTimeout(() => {
-        battleState = null;
         closeDetail();
         renderBattlefield();
         renderRight('squad');
         updateRes();
         saveGame();
-      }, 700);
-    }, 750);
+      }, 600);
+    }, 700);
   }, 400);
 }
 
@@ -1285,18 +1274,10 @@ function closeBattleMenu(){
   // Don't mark as acted - player can re-select
 }
 
-function enemyTurn(){const livingE=state.enemies.filter(e=>e.hp>0),livingU=getCurrentSquad().filter(u=>u.hp>0);if(!livingE.length||!livingU.length)return;
-const atk=livingE[Math.floor(Math.random()*livingE.length)],tgt=livingU[Math.floor(Math.random()*livingU.length)];
-const dmg=atk.dmg+Math.floor(Math.random()*4)-1;tgt.hp=Math.max(0,tgt.hp-dmg);
-state.sanity=Math.max(0,state.sanity-(state.leader?.bonus==='Hardened'?Math.floor(atk.sanDmg*.6):atk.sanDmg));
-toast(`${atk.name} hits ${tgt.name} (−${dmg})`,'danger');
-  if(tgt.hp<=0){
-    toast(`${tgt.name} is down!`,'danger');
-    // death flash
-    showDetail('UNIT DOWN',`<div style="text-align:center"><img src="${tgt.img}" style="width:90px;height:90px;object-fit:contain;filter:grayscale(1);opacity:0.6;margin-bottom:8px"><div style="color:var(--danger);font-weight:700;font-size:1.1rem">${tgt.name}</div><div style="color:var(--muted);margin-top:4px">Killed in action</div></div>`,
-      [{text:'Continue',action:closeDetail}]);
-  }
-if(livingU.every(u=>u.hp<=0))endCombat(false);renderBattlefield();renderRight('squad');updateRes();}
+function enemyTurn(){
+  // Legacy mass AI disabled. Combat damage is handled inside poke battle only.
+}
+
 function endTurn(){if(state.phase!=='combat')return;getCurrentSquad().forEach(u=>u.acted=false);
 state.enemies.filter(e=>e.hp>0).forEach(()=>{if(Math.random()<.65)enemyTurn();});state.turn++;state.retreatedThisTurn=false;
 state.sanity=Math.max(0,state.sanity-2);updateRes();renderBattlefield();renderRight('squad');toast('New turn — units ready','ok');}
@@ -1419,7 +1400,7 @@ function showRadioMessage(from, msg, type, time){
         <span style="color:var(--muted);font-size:0.7rem">${time||''}</span>
       </div>
       <div style="font-size:0.9rem;line-height:1.5;font-family:monospace;color:var(--text)">${msg}</div>
-      <div style="margin-top:10px;font-size:0.65rem;color:var(--muted)">— END OF TRANSMISSION —</div>
+      <div style="margin-top:10px;font-size:0.65rem;color:var(--muted)">, END OF TRANSMISSION ,</div>
     </div>
   `, [{text:'Acknowledge', action:closeDetail}]);
 }
@@ -1659,7 +1640,7 @@ function recruitUnit(type){
   const s = SOLDIERS[0];
   state.pool.push({
     id:'r'+Date.now(), name:'Rifleman '+Math.floor(Math.random()*90+10), rank:'Private', role:'Rifle',
-    img:s.img, hp:80, maxHp:80, san:70, maxSan:70, weapon:null, status:'stable', acted:false, sector:null, upgrades:[]
+    img:s.img, hp:100, maxHp:100, san:70, maxSan:70, weapon:null, status:'stable', acted:false, sector:null, upgrades:[]
   });
   toast('Rifleman recruited','ok'); updateRes(); renderRight('squad'); saveGame();
 }
