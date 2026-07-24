@@ -324,6 +324,26 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .mine-bar { height:14px; background:#1a2030; border-radius:7px; overflow:hidden; margin:12px 0; border:1px solid var(--border); }
 .mine-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffb020,#00e5a0); transition:width 0.15s linear; }
 
+
+/* Epic cutscene */
+.modal.cutscene-modal { max-width: 720px; padding: 0; overflow: hidden; }
+.cs-header { background:linear-gradient(90deg,#1a0508,#0a0c12); padding:14px 18px; border-bottom:1px solid #3a1520;
+  font-weight:900; letter-spacing:2px; font-size:0.85rem; color:var(--danger); text-transform:uppercase; }
+.cs-body { padding: 20px 18px; max-height: 60vh; overflow-y: auto;
+  background: radial-gradient(ellipse at 50% 0%, #12080c 0%, #07080c 60%); }
+.cs-exchange { display:flex; gap:16px; margin-bottom:22px; align-items:flex-start; animation: cutIn 0.5s ease; }
+.cs-exchange.from-right { flex-direction: row-reverse; text-align: right; }
+.cs-portrait { width: 90px; height: 90px; object-fit: contain; border-radius: 10px;
+  background: #0a0c12; border: 2px solid var(--border); flex-shrink: 0;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+.cs-exchange.from-right .cs-portrait { border-color: #5c1a1a; }
+.cs-bubble { flex:1; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+  padding: 12px 14px; position: relative; }
+.cs-bubble .cs-name { font-weight: 800; font-size: 0.8rem; color: var(--accent); margin-bottom: 4px; }
+.cs-exchange.from-right .cs-bubble .cs-name { color: var(--danger); }
+.cs-bubble .cs-text { font-size: 0.92rem; line-height: 1.55; color: var(--text); }
+.cs-footer { padding: 12px 18px; border-top: 1px solid var(--border); background: #0a0c12; }
+
 </style>
 </head>
 <body>
@@ -417,67 +437,69 @@ let state={leader:null,scrap:100,bio:40,void:15,sanity:100,pool:[],sectorSquads:
 const STORY = {
   intro: {
     id: 'intro',
-    title: 'Briefing — Day 1',
+    title: 'BRIEFING — SURFACE LOST',
     lines: [
-      { who: 'leader', text: 'This is it. The surface is gone. Everything below the ridge belongs to them now.' },
-      { who: 'sarge', text: 'We still have the outpost. We still have guns. That\'s enough for me.' },
-      { who: 'leader', text: 'It has to be. Command is silent. We are the last organised force on this rock.' },
-      { who: 'duke', text: 'I\'ve been in the fog. They don\'t just kill. They... rewrite. Stay sharp.' }
+      { who: 'leader', text: 'The colony is gone. Not occupied — converted. We watched the last city lights go dark on the scope and then the scopes went dark too.' },
+      { who: 'sarge', text: 'My squad held a corridor for six hours. When the ammo ran out, the walls started screaming. Not the men. The walls.' },
+      { who: 'duke', text: 'I\'ve been in the fog belt. They don\'t leave bodies. They leave... revisions. People you knew, wearing the same face, wrong behind the eyes.' },
+      { who: 'leader', text: 'Command is silent. Orbit is silent. We are the last organised guns on this rock. Hold the outpost. Expand when you can. And if you hear the song — do not listen.' }
     ]
   },
   first_victory: {
     id: 'first_victory',
-    title: 'After Action',
+    title: 'AFTER ACTION — BLOOD ON THE RIDGE',
     lines: [
-      { who: 'leader', text: 'Sector secured. For now.' },
-      { who: 'susan', text: 'Casualties are light. I can work with that.' },
-      { who: 'gritt', text: 'They\'ll be back. They always come back.' },
-      { who: 'leader', text: 'Then we hold. Expand. Take the next ridge before they do.' }
+      { who: 'leader', text: 'Sector clear. For now. Burn the remains. Don\'t leave anything that can stand back up.' },
+      { who: 'susan', text: 'Two walking wounded. One won\'t stop scratching at his neck. I sedated him. If he turns, I\'ll handle it.' },
+      { who: 'gritt', text: 'They pull back when you hurt them enough. That means they can feel fear. Good. Fear is something we can work with.' },
+      { who: 'leader', text: 'Stock the mags. Next ridge at dawn. We take ground or we become it.' }
     ]
   },
   first_loss: {
     id: 'first_loss',
-    title: 'Aftermath',
+    title: 'AFTERMATH — NAMES ON THE WALL',
     lines: [
-      { who: 'leader', text: 'We lost people out there.' },
-      { who: 'mike', text: 'They knew the risks. We all did.' },
-      { who: 'savannah', text: 'I can boost the scanners. Next time we\'ll see them coming.' },
-      { who: 'leader', text: 'Do it. No more blind drops.' }
+      { who: 'leader', text: 'We left people out there. Say their names once. Then put them away. Grief gets you killed.' },
+      { who: 'mike', text: 'They knew the contract. So did I. Next drop I go first.' },
+      { who: 'savannah', text: 'The signal that hit them wasn\'t random. Something under the crust is coordinating. I can map it — if you give me time and blood samples.' },
+      { who: 'leader', text: 'You get both. No more blind walks into the fog.' }
     ]
   },
   charlie_unlock: {
     id: 'charlie_unlock',
-    title: 'Charlie Spire',
+    title: 'INTEL — CHARLIE SPIRE',
     lines: [
-      { who: 'duke', text: 'Charlie Spire just lit up on the net. Strong Vorrh presence. High ground.' },
-      { who: 'vanessa', text: 'If we take the Spire we control the basin approaches.' },
-      { who: 'leader', text: 'Prep a squad. We move at first light.' }
+      { who: 'duke', text: 'Charlie Spire just bloomed on thermal. Whole summit crawling. They\'re nesting in the old relay tower.' },
+      { who: 'vanessa', text: 'If they keep the high ground they see every approach into the basin. We take the Spire or we fight uphill forever.' },
+      { who: 'leader', text: 'Prep a heavy team. Breach at last light. Quiet until you can\'t be. Then make it loud.' },
+      { who: 'gritt', text: 'I\'ll carve a notch for every one that drops. Tower\'ll run out of stone before I run out of knife.' }
     ]
   },
   mid_game: {
     id: 'mid_game',
-    title: 'The Pattern',
+    title: 'THE PATTERN — ECHO DEPTHS',
     lines: [
-      { who: 'savannah', text: 'I\'ve been reading the signals. The Vorrh aren\'t random. They\'re building something under Echo Depths.' },
-      { who: 'leader', text: 'Building what?' },
-      { who: 'savannah', text: 'A node. A brain. If it finishes, every infected on the planet becomes one mind.' },
-      { who: 'gritt', text: 'Then we burn it before it wakes.' }
+      { who: 'savannah', text: 'I cracked a fragment of their chatter. It isn\'t language. It\'s architecture. They\'re building a lattice under Echo Depths — a planetary nervous system.' },
+      { who: 'leader', text: 'To what end?' },
+      { who: 'savannah', text: 'When it completes, every converted body on this world becomes one mind. One will. Ours included, if we\'re still here.' },
+      { who: 'susan', text: 'Then we cut the spine before the brain wakes. I don\'t care how deep we have to go.' },
+      { who: 'leader', text: 'All units. Priority shift. We find the node. We burn it. Everything else is secondary.' }
     ]
   },
   late_game: {
     id: 'late_game',
-    title: 'Foxtrot Gate',
+    title: 'FINAL GATE — FOXTROT',
     lines: [
-      { who: 'leader', text: 'Foxtrot is the last gate. Beyond it is the core.' },
-      { who: 'susan', text: 'Half our people are gone. The rest are running on stims and spite.' },
-      { who: 'mike', text: 'Spite\'s enough. Let\'s end this.' },
-      { who: 'leader', text: 'All squads. Final push. For everyone we left behind.' }
+      { who: 'leader', text: 'Foxtrot Gate is the last door. Beyond it is the core. Half our roster is gone. The other half is running on stims, spite, and borrowed time.' },
+      { who: 'mike', text: 'Spite\'s kept me alive through three wars. It\'ll do for one more door.' },
+      { who: 'duke', text: 'I can hear them singing through the bulkhead. Same song that took my team. I\'m going in anyway.' },
+      { who: 'leader', text: 'Then we end it. For the ones who didn\'t make it to the briefing. For the ones still wearing our faces in the fog. Move.' }
     ]
   }
 };
 
 const PORTRAITS = {
-  leader: null, // filled from state.leader
+  leader: null,
   sarge: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/marine1_orig.png',
   susan: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/suszan_orig.png',
   mike: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/mike_orig.png',
@@ -495,7 +517,13 @@ function playCutscene(storyId, onDone){
   state.storySeen[storyId] = true;
 
   const leaderImg = state.leader ? state.leader.img : PORTRAITS.sarge;
-  const leaderName = state.leader ? (state.leader.rank + ' ' + state.leader.name) : 'Commander';
+  const leaderName = state.leader ? (state.leader.rank + ' ' + state.leader.name + ' ' + (state.leader.last||'')) : 'Commander';
+
+  const nameMap = {
+    sarge:'Sgt. Harlan', susan:'Lt. Susan Voss', mike:'Cpt. Mike Draven',
+    gritt:'Sgt. Gritt Kane', duke:'Cpl. Duke Reyes', vanessa:'Lt. Vanessa Cross',
+    savannah:'Spc. Savannah Holt'
+  };
 
   let lineIdx = 0;
   function showLine(){
@@ -505,32 +533,35 @@ function playCutscene(storyId, onDone){
       if(onDone) onDone();
       return;
     }
-    // Build all lines up to current
-    let body = '<div class="cutscene-box">';
+    let body = '<div class="cs-body">';
     for(let i=0; i<=lineIdx; i++){
       const L = scene.lines[i];
       const isLeader = L.who === 'leader';
       const img = isLeader ? leaderImg : (PORTRAITS[L.who] || PORTRAITS.sarge);
-      const who = isLeader ? leaderName : (
-        L.who==='sarge'?'Sgt. Harlan':
-        L.who==='susan'?'Lt. Voss':
-        L.who==='mike'?'Cpt. Draven':
-        L.who==='gritt'?'Sgt. Kane':
-        L.who==='duke'?'Cpl. Reyes':
-        L.who==='vanessa'?'Lt. Cross':
-        L.who==='savannah'?'Spc. Holt': L.who
-      );
-      body += `<div class="cutscene-line">
-        <img src="${img}" alt="">
-        <div><div class="who">${who}</div><div class="what">${L.text}</div></div>
+      const who = isLeader ? leaderName : (nameMap[L.who] || L.who);
+      const side = (i % 2 === 0) ? '' : ' from-right';
+      body += `<div class="cs-exchange${side}">
+        <img class="cs-portrait" src="${img}" alt="">
+        <div class="cs-bubble">
+          <div class="cs-name">${who}</div>
+          <div class="cs-text">${L.text}</div>
+        </div>
       </div>`;
     }
     body += '</div>';
 
     const isLast = lineIdx >= scene.lines.length - 1;
-    showDetail(scene.title, body, [
-      { text: isLast ? 'Continue' : 'Next →', action: ()=>{ lineIdx++; showLine(); } }
-    ]);
+    const box = document.getElementById('detailBox');
+    box.classList.add('wide', 'cutscene-modal');
+    box.innerHTML = `
+      <div class="cs-header">${scene.title}</div>
+      ${body}
+      <div class="cs-footer">
+        <button class="btn primary" style="width:100%" id="csNext">${isLast ? 'CONTINUE' : 'NEXT →'}</button>
+      </div>
+    `;
+    document.getElementById('csNext').onclick = ()=>{ lineIdx++; showLine(); };
+    document.getElementById('detailOverlay').classList.add('active');
   }
   showLine();
 }
@@ -593,9 +624,21 @@ function loadGame(){
   }
 }
 function resetGame(){
-  if(!confirm('Reset all progress? This cannot be undone.')) return;
-  localStorage.removeItem('hive_save');
-  location.reload();
+  showDetail('RESET PROGRESS', `
+    <div style="text-align:center;padding:8px 0">
+      <div style="font-size:2rem;margin-bottom:8px">⚠</div>
+      <div style="font-size:0.9rem;line-height:1.5;color:var(--muted)">
+        This will erase <strong style="color:var(--danger)">all saved progress</strong> — squads, buildings, resources, and story.
+        <br><br>This cannot be undone.
+      </div>
+    </div>
+  `, [
+    {text:'YES — WIPE EVERYTHING', action:()=>{
+      localStorage.removeItem('hive_save');
+      location.reload();
+    }},
+    {text:'Cancel', action:closeDetail}
+  ]);
 }
 
 
@@ -947,6 +990,10 @@ function performAttack(unitId, enemyIdx){
   const enemy = state.enemies[enemyIdx];
   if(!unit || !enemy || unit.hp <= 0 || enemy.hp <= 0){ toast('Unit is down or invalid','warn'); return; }
   if(unit.acted){ toast(unit.name + ' already acted','warn'); return; }
+  // Normalize HP to numbers before battle
+  unit.hp = Number(unit.hp); unit.maxHp = Number(unit.maxHp) || 100;
+  enemy.hp = Number(enemy.hp); enemy.maxHp = Number(enemy.maxHp) || enemy.hp;
+  if(unit.hp <= 0){ toast(unit.name + ' is already down','warn'); return; }
   battleState = { unit, enemyIdx, enemy, turn: 'player', canFlee: true };
   openPokeBattle(unit, enemy);
 }
@@ -1094,15 +1141,23 @@ function executePokeMove(move){
 
 function enemyPokeTurn(){
   if(!battleState) return;
-  const { unit, enemy } = battleState;
-  if(!unit || !enemy || enemy.hp <= 0 || unit.hp <= 0) return;
+  const unit = battleState.unit;
+  const enemy = battleState.enemy;
+  if(!unit || !enemy) return;
+  // Ensure numeric HP
+  unit.hp = Number(unit.hp);
+  unit.maxHp = Number(unit.maxHp) || 100;
+  enemy.hp = Number(enemy.hp);
+  if(enemy.hp <= 0 || unit.hp <= 0) return;
 
   const log = document.getElementById('pokeLog');
   const playerSprite = document.getElementById('pokePlayerSprite');
   const enemySprite = document.getElementById('pokeEnemySprite');
 
-  // Debuff reduces damage
-  let dmg = Math.min(enemy.dmg + Math.floor(Math.random()*4), Math.floor((unit.maxHp||100)*0.45)); // cap ~45% maxHP per hit
+  // Damage: 8-20 range typically, never more than 40% of max HP
+  let dmg = Number(enemy.dmg) || 10;
+  dmg = dmg + Math.floor(Math.random()*4);
+  dmg = Math.max(1, Math.min(dmg, Math.floor(unit.maxHp * 0.4)));
   if(battleState.enemyDebuffed){
     dmg = Math.max(1, Math.floor(dmg * 0.6));
     battleState.enemyDebuffed = false;
@@ -1110,54 +1165,50 @@ function enemyPokeTurn(){
   if(battleState.fortified){
     dmg = Math.max(1, Math.floor(dmg * 0.5));
     battleState.fortified = false;
-    if(log) log.textContent = 'Fortified! Damage reduced!';
   }
 
   const attacks = ['lunges', 'strikes', 'screeches and lashes', 'surges forward'];
   const atkName = attacks[Math.floor(Math.random()*attacks.length)];
-  log.textContent = enemy.name + ' ' + atkName + '!';
-  enemySprite.classList.add('enemy-attack');
+  if(log) log.textContent = enemy.name + ' ' + atkName + '!';
+  if(enemySprite) enemySprite.classList.add('enemy-attack');
 
   setTimeout(() => {
-    enemySprite.classList.remove('enemy-attack');
-    playerSprite.classList.add('hurt');
-    // Apply damage properly
+    if(enemySprite) enemySprite.classList.remove('enemy-attack');
+    if(playerSprite) playerSprite.classList.add('hurt');
+
     const prevHp = unit.hp;
-    unit.hp = Math.max(0, Math.floor(unit.hp - dmg));
-    if(unit.hp < 0) unit.hp = 0;
-    const sanLoss = state.leader?.bonus==='Hardened' ? Math.floor(enemy.sanDmg*0.55) : enemy.sanDmg;
+    unit.hp = Math.max(0, prevHp - dmg);
+    // DO NOT force kill — only die if HP actually reaches 0
+
+    const sanLoss = state.leader?.bonus==='Hardened' ? Math.floor((enemy.sanDmg||5)*0.55) : (enemy.sanDmg||5);
     const finalSan = (state.buildings||[]).some(b=>b.id==='sanctuary' && !b.building) ? Math.floor(sanLoss*0.7) : sanLoss;
     state.sanity = Math.max(0, state.sanity - finalSan);
 
-    // Force HP bar + text update (immediate, no stale values)
-    const maxH = unit.maxHp || 100;
-    const pct = unit.hp <= 0 ? 0 : Math.max(0, Math.min(100, (unit.hp / maxH) * 100));
+    const pct = unit.hp <= 0 ? 0 : Math.min(100, (unit.hp / unit.maxHp) * 100);
     const hpEl = document.getElementById('pokePlayerHp');
     if(hpEl){
-      hpEl.style.transition = 'width 0.4s ease';
       hpEl.style.width = pct + '%';
-      if(unit.hp <= 0) hpEl.style.background = '#333';
     }
-    // Update every HP text node in the player box
     document.querySelectorAll('.poke-player .poke-hp-box div').forEach(el=>{
-      if(el.textContent && el.textContent.includes('/')){
-        el.textContent = unit.hp + ' / ' + maxH + ' HP';
+      if(el.textContent && /\d+\s*\/\s*\d+/.test(el.textContent)){
+        el.textContent = unit.hp + ' / ' + unit.maxHp + ' HP';
       }
     });
     floatDmg(playerSprite, dmg);
-    log.textContent = unit.name + ' took ' + dmg + ' damage! (' + prevHp + ' → ' + unit.hp + ')' + (unit.hp<=0 ? ' — FATAL' : '');
-
+    if(log) log.textContent = unit.name + ' took ' + dmg + ' damage! (' + prevHp + ' → ' + unit.hp + ' HP)' + (unit.hp<=0 ? ' — FATAL' : '');
 
     setTimeout(() => {
-      playerSprite.classList.remove('hurt');
+      if(playerSprite) playerSprite.classList.remove('hurt');
       unit.acted = true;
       state.selectedUnit = null;
 
       if(unit.hp <= 0){
-        playerSprite.classList.add('faint');
-        log.textContent = unit.name + ' has fallen!';
+        unit.hp = 0;
+        if(playerSprite) playerSprite.classList.add('faint');
+        if(log) log.textContent = unit.name + ' has fallen!';
         setTimeout(() => {
           closeDetail();
+          battleState = null;
           showDetail('UNIT DOWN', `<div class="death-scene">
             <img src="${unit.img}" alt="">
             <div style="color:var(--danger);font-weight:900;font-size:1.2rem;letter-spacing:1px">KIA</div>
@@ -1176,6 +1227,7 @@ function enemyPokeTurn(){
       }
 
       setTimeout(() => {
+        battleState = null;
         closeDetail();
         renderBattlefield();
         renderRight('squad');
@@ -1340,7 +1392,7 @@ function unlockNextSector(){const locked=state.sectors.find(s=>!s.unlocked);if(l
 function buyWeapon(w){const cost=state.leader?.bonus==='Tactical'?Math.floor(w.cost*.8):w.cost;if(state.scrap<cost){toast('Not enough Scrap','warn');return;}
 state.scrap-=cost;state.weapons.push({...w,id:'w'+Date.now()});toast(`Purchased ${w.name}`,'ok');updateRes();renderLeft('store');}
 function buyMark3(){if(state.scrap<MARK3.cost){toast('Need 85 Scrap','warn');return;}state.scrap-=MARK3.cost;
-state.pool.push({id:'m3_'+Date.now(),name:MARK3.name,rank:MARK3.rank,role:MARK3.role,img:MARK3.img,hp:MARK3.hp,maxHp:MARK3.hp,san:MARK3.san,maxSan:MARK3.san,weapon:null,status:'stable',acted:false,sector:null});
+state.pool.push({id:'m3_'+Date.now(),name:MARK3.name,rank:MARK3.rank,role:MARK3.role,img:MARK3.img,hp:MARK3.hp,maxHp:MARK3.hp,san:MARK3.san,maxSan:MARK3.san,weapon:null,status:'stable',acted:false,sector:null,upgrades:[]});
 toast('Mark-3 Heavy acquired','ok');updateRes();renderLeft('store');renderRight('squad');}
 function buyVehicle(v){if(state.scrap<v.cost){toast('Not enough Scrap','warn');return;}state.scrap-=v.cost;state.vehicles.push({...v,deployed:false});toast(`Acquired ${v.name}`,'ok');updateRes();renderRight('vehicles');}
 function addTx(from,msg,type='',showRadio=false){
@@ -1607,7 +1659,7 @@ function recruitUnit(type){
   const s = SOLDIERS[0];
   state.pool.push({
     id:'r'+Date.now(), name:'Rifleman '+Math.floor(Math.random()*90+10), rank:'Private', role:'Rifle',
-    img:s.img, hp:80, maxHp:80, san:70, maxSan:70, weapon:null, status:'stable', acted:false, sector:null
+    img:s.img, hp:80, maxHp:80, san:70, maxSan:70, weapon:null, status:'stable', acted:false, sector:null, upgrades:[]
   });
   toast('Rifleman recruited','ok'); updateRes(); renderRight('squad'); saveGame();
 }
