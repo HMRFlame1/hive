@@ -344,6 +344,47 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .cs-bubble .cs-text { font-size: 0.92rem; line-height: 1.55; color: var(--text); }
 .cs-footer { padding: 12px 18px; border-top: 1px solid var(--border); background: #0a0c12; }
 
+
+/* Movie-style intro cinematic */
+.modal.cine-modal { max-width: 860px; padding: 0; overflow: hidden; background: #050608; }
+.cine-frame { display: flex; min-height: 420px; max-height: 75vh; }
+.cine-left {
+  width: 280px; flex-shrink: 0; background: linear-gradient(180deg, #0a1018 0%, #050608 100%);
+  border-right: 1px solid #1a2030; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 24px 16px; position: relative;
+}
+.cine-left img {
+  width: 180px; height: 180px; object-fit: contain; border-radius: 12px;
+  background: #0a0c12; border: 2px solid #2a3142;
+  box-shadow: 0 0 40px rgba(0,229,160,0.15); margin-bottom: 14px;
+}
+.cine-left .cine-name { font-weight: 900; font-size: 1rem; color: var(--accent); letter-spacing: 1px; }
+.cine-left .cine-rank { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+.cine-right {
+  flex: 1; padding: 28px 28px 20px; overflow-y: auto; text-align: left;
+  background: radial-gradient(ellipse at 0% 0%, #0c1210 0%, #050608 55%);
+}
+.cine-title {
+  font-size: 0.75rem; font-weight: 900; letter-spacing: 3px; color: var(--danger);
+  text-transform: uppercase; margin-bottom: 18px; opacity: 0.9;
+}
+.cine-line {
+  font-size: 1.05rem; line-height: 1.65; color: #d0d8e4; margin-bottom: 16px;
+  animation: cineFade 0.6s ease; font-weight: 500;
+}
+.cine-line.dim { color: #6b7585; }
+@keyframes cineFade { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.cine-footer {
+  padding: 14px 20px; border-top: 1px solid #1a2030; background: #080a0e;
+  display: flex; gap: 10px;
+}
+.cine-footer .btn { flex: 1; padding: 12px; font-size: 0.85rem; }
+@media(max-width:700px){
+  .cine-frame{flex-direction:column;min-height:auto}
+  .cine-left{width:100%;flex-direction:row;gap:14px;padding:16px;border-right:none;border-bottom:1px solid #1a2030}
+  .cine-left img{width:80px;height:80px;margin-bottom:0}
+}
+
 </style>
 </head>
 <body>
@@ -518,9 +559,14 @@ function playCutscene(storyId, onDone){
   if(state.storySeen[storyId]){ if(onDone) onDone(); return; }
   state.storySeen[storyId] = true;
 
+  // Movie-style intro: one speaker, portrait left, scrolling text right
+  if(storyId === 'intro'){
+    playCinematicIntro(scene, onDone);
+    return;
+  }
+
   const leaderImg = state.leader ? state.leader.img : PORTRAITS.sarge;
   const leaderName = state.leader ? (state.leader.rank + ' ' + state.leader.name + ' ' + (state.leader.last||'')) : 'Commander';
-
   const nameMap = {
     sarge:'Sgt. Harlan', susan:'Lt. Susan Voss', mike:'Cpt. Mike Draven',
     gritt:'Sgt. Gritt Kane', duke:'Cpl. Duke Reyes', vanessa:'Lt. Vanessa Cross',
@@ -530,10 +576,7 @@ function playCutscene(storyId, onDone){
   let lineIdx = 0;
   function showLine(){
     if(lineIdx >= scene.lines.length){
-      closeDetail();
-      saveGame();
-      if(onDone) onDone();
-      return;
+      closeDetail(); saveGame(); if(onDone) onDone(); return;
     }
     let body = '<div class="cs-body">';
     for(let i=0; i<=lineIdx; i++){
@@ -542,30 +585,73 @@ function playCutscene(storyId, onDone){
       const img = isLeader ? leaderImg : (PORTRAITS[L.who] || PORTRAITS.sarge);
       const who = isLeader ? leaderName : (nameMap[L.who] || L.who);
       const side = (i % 2 === 0) ? '' : ' from-right';
-      body += `<div class="cs-exchange${side}">
-        <img class="cs-portrait" src="${img}" alt="">
-        <div class="cs-bubble">
-          <div class="cs-name">${who}</div>
-          <div class="cs-text">${L.text}</div>
-        </div>
-      </div>`;
+      body += '<div class="cs-exchange'+side+'"><img class="cs-portrait" src="'+img+'" alt=""><div class="cs-bubble"><div class="cs-name">'+who+'</div><div class="cs-text">'+L.text+'</div></div></div>';
     }
     body += '</div>';
-
     const isLast = lineIdx >= scene.lines.length - 1;
     const box = document.getElementById('detailBox');
     box.classList.add('wide', 'cutscene-modal');
-    box.innerHTML = `
-      <div class="cs-header">${scene.title}</div>
-      ${body}
-      <div class="cs-footer">
-        <button class="btn primary" style="width:100%" id="csNext">${isLast ? 'CONTINUE' : 'NEXT →'}</button>
-      </div>
-    `;
+    box.innerHTML = '<div class="cs-header">'+scene.title+'</div>'+body+'<div class="cs-footer"><button class="btn primary" style="width:100%" id="csNext">'+(isLast?'CONTINUE':'NEXT →')+'</button></div>';
     document.getElementById('csNext').onclick = ()=>{ lineIdx++; showLine(); };
     document.getElementById('detailOverlay').classList.add('active');
   }
   showLine();
+}
+
+function playCinematicIntro(scene, onDone){
+  const img = PORTRAITS.sarge;
+  const lines = scene.lines.map(l => l.text);
+  let idx = 0;
+
+  const box = document.getElementById('detailBox');
+  box.classList.add('wide', 'cine-modal');
+  box.classList.remove('cutscene-modal', 'battle-modal');
+
+  function render(){
+    let textHtml = '';
+    for(let i=0; i<=idx; i++){
+      textHtml += '<div class="cine-line'+(i<idx?' dim':'')+'">'+lines[i]+'</div>';
+    }
+    const isLast = idx >= lines.length - 1;
+    box.innerHTML = `
+      <div class="cine-frame">
+        <div class="cine-left">
+          <img src="${img}" alt="Sgt. Harlan">
+          <div class="cine-name">SGT. HARLAN</div>
+          <div class="cine-rank">Residual Command · Surface Theatre</div>
+        </div>
+        <div class="cine-right" id="cineScroll">
+          <div class="cine-title">${scene.title}</div>
+          ${textHtml}
+        </div>
+      </div>
+      <div class="cine-footer">
+        <button class="btn" id="cineSkip">SKIP</button>
+        <button class="btn primary" id="cineNext">${isLast ? 'ENTER COMMAND' : 'NEXT →'}</button>
+      </div>
+    `;
+    document.getElementById('detailOverlay').classList.add('active');
+    // Auto-scroll to latest line
+    const sc = document.getElementById('cineScroll');
+    if(sc) sc.scrollTop = sc.scrollHeight;
+
+    document.getElementById('cineNext').onclick = ()=>{
+      if(isLast){
+        closeDetail();
+        saveGame();
+        if(onDone) onDone();
+      } else {
+        idx++;
+        render();
+      }
+    };
+    document.getElementById('cineSkip').onclick = ()=>{
+      closeDetail();
+      saveGame();
+      if(onDone) onDone();
+    };
+  }
+  render();
 }
 
 function checkStoryTriggers(){
@@ -1832,7 +1918,7 @@ document.getElementById('detailOverlay').classList.add('active');}
 function closeDetail(){
   document.getElementById('detailOverlay').classList.remove('active');
   const modal = document.getElementById('detailBox');
-  if(modal) modal.classList.remove('wide');
+  if(modal) modal.classList.remove('wide', 'cine-modal', 'cutscene-modal', 'battle-modal');
 }
 function toast(msg,type=''){const c=document.getElementById('toasts');const t=document.createElement('div');t.className='toast '+type;t.textContent=msg;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';t.style.transition='.3s';setTimeout(()=>t.remove(),300);},2500);}
 setInterval(()=>{if(state.phase==='outpost'&&Math.random()<.08)runScan();},55000);
