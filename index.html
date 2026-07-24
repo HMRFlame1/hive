@@ -300,6 +300,30 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .travel-status { font-size: 0.9rem; font-weight: 700; margin: 8px 0; position: relative; z-index: 2; }
 .travel-bar-wrap { max-width: 280px; margin: 10px auto; position: relative; z-index: 2; }
 
+
+/* Death & squad wipe */
+.death-scene { text-align:center; padding:16px 8px; }
+.death-scene img { width:110px; height:110px; object-fit:contain; filter:grayscale(1); opacity:0.5;
+  animation: deathFade 1.2s ease forwards; margin-bottom:12px; }
+@keyframes deathFade {
+  0%{filter:grayscale(0);opacity:1;transform:scale(1)}
+  40%{filter:grayscale(0.5);opacity:0.8;transform:scale(1.05)}
+  100%{filter:grayscale(1);opacity:0.4;transform:scale(0.9) translateY(10px)}
+}
+.squad-wipe-scene { text-align:center; padding:20px 10px;
+  background:radial-gradient(ellipse at 50% 40%, #1a0508 0%, #07080c 70%); border-radius:10px; }
+.squad-wipe-scene .skull { font-size:3rem; animation: skullPulse 1.5s ease infinite; }
+@keyframes skullPulse { 0%,100%{opacity:0.7;transform:scale(1)} 50%{opacity:1;transform:scale(1.1)} }
+.cutscene-box { background:#0a0c12; border:1px solid var(--border); border-radius:10px; padding:16px; text-align:left; }
+.cutscene-line { display:flex; gap:12px; margin-bottom:14px; align-items:flex-start; animation: cutIn 0.4s ease; }
+@keyframes cutIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.cutscene-line img { width:52px; height:52px; object-fit:contain; border-radius:6px; background:#0a0c12; flex-shrink:0; }
+.cutscene-line .who { font-weight:800; font-size:0.8rem; color:var(--accent); }
+.cutscene-line .what { font-size:0.85rem; color:var(--text); line-height:1.45; margin-top:2px; }
+.mine-panel { text-align:center; padding:12px; }
+.mine-bar { height:14px; background:#1a2030; border-radius:7px; overflow:hidden; margin:12px 0; border:1px solid var(--border); }
+.mine-fill { height:100%; width:0%; background:linear-gradient(90deg,#ffb020,#00e5a0); transition:width 0.15s linear; }
+
 </style>
 </head>
 <body>
@@ -323,7 +347,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="center">
 <div class="mission-h"><div><div id="missionTitle" style="font-weight:700;font-size:.9rem">Command Centre Online</div><div id="missionSub" style="font-size:.65rem;color:var(--muted)">Select a sector to deploy</div></div><div id="missionPhase" style="font-size:.65rem;background:var(--panel2);padding:3px 8px;border-radius:10px;color:var(--accent)">OUTPOST</div></div>
 <div class="battlefield" id="battlefield"><div><div class="side-title">Your Forces</div><div id="playerSide"><div class="empty">Deploy a squad</div></div></div><div><div class="side-title">Hostiles — Vorrh</div><div id="enemySide"><div class="empty">No contacts</div></div></div></div>
-<div class="action-bar"><button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button><button class="btn" id="btnTravel" onclick="openTravel()">TRAVEL</button><button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button><button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button><button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button></div>
+<div class="action-bar"><button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button><button class="btn" id="btnTravel" onclick="openTravel()">TRAVEL</button><button class="btn" id="btnMine" onclick="openMine()">MINE</button><button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button><button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button><button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button></div>
 </div>
 <div class="panel"><div class="tabs"><div class="tab active" data-tab="squad">SQUAD</div><div class="tab" data-tab="vehicles">VEHICLES</div><div class="tab" data-tab="tx">COMMS</div></div><div class="panel-b" id="rightPanel"></div></div>
 </div></div>
@@ -386,7 +410,153 @@ const SECTORS=[
 {id:'echo',name:'Echo Depths',status:'locked',unlocked:false,threat:4,desc:'Deep hive tunnels.'},
 {id:'foxtrot',name:'Foxtrot Gate',status:'locked',unlocked:false,threat:5,desc:'Suspected Vorrh command node.'}
 ];
-let state={leader:null,scrap:100,bio:40,void:15,sanity:100,pool:[],sectorSquads:{},weapons:[],vehicles:[],buildings:[],squads:[],sectors:JSON.parse(JSON.stringify(SECTORS)),currentSector:null,phase:'outpost',selectedUnit:null,enemies:[],mission:0,turn:0,retreatedThisTurn:false,trapped:false,transmissions:[],radarContacts:[],lastScan:0,namedSquads:{}};
+let state={leader:null,scrap:100,bio:40,void:15,sanity:100,pool:[],sectorSquads:{},weapons:[],vehicles:[],buildings:[],squads:[],sectors:JSON.parse(JSON.stringify(SECTORS)),currentSector:null,phase:'outpost',selectedUnit:null,enemies:[],mission:0,turn:0,retreatedThisTurn:false,trapped:false,transmissions:[],radarContacts:[],lastScan:0,namedSquads:{},storySeen:{}};
+
+
+// ===== STORYLINE & CUTSCENES =====
+const STORY = {
+  intro: {
+    id: 'intro',
+    title: 'Briefing — Day 1',
+    lines: [
+      { who: 'leader', text: 'This is it. The surface is gone. Everything below the ridge belongs to them now.' },
+      { who: 'sarge', text: 'We still have the outpost. We still have guns. That\'s enough for me.' },
+      { who: 'leader', text: 'It has to be. Command is silent. We are the last organised force on this rock.' },
+      { who: 'duke', text: 'I\'ve been in the fog. They don\'t just kill. They... rewrite. Stay sharp.' }
+    ]
+  },
+  first_victory: {
+    id: 'first_victory',
+    title: 'After Action',
+    lines: [
+      { who: 'leader', text: 'Sector secured. For now.' },
+      { who: 'susan', text: 'Casualties are light. I can work with that.' },
+      { who: 'gritt', text: 'They\'ll be back. They always come back.' },
+      { who: 'leader', text: 'Then we hold. Expand. Take the next ridge before they do.' }
+    ]
+  },
+  first_loss: {
+    id: 'first_loss',
+    title: 'Aftermath',
+    lines: [
+      { who: 'leader', text: 'We lost people out there.' },
+      { who: 'mike', text: 'They knew the risks. We all did.' },
+      { who: 'savannah', text: 'I can boost the scanners. Next time we\'ll see them coming.' },
+      { who: 'leader', text: 'Do it. No more blind drops.' }
+    ]
+  },
+  charlie_unlock: {
+    id: 'charlie_unlock',
+    title: 'Charlie Spire',
+    lines: [
+      { who: 'duke', text: 'Charlie Spire just lit up on the net. Strong Vorrh presence. High ground.' },
+      { who: 'vanessa', text: 'If we take the Spire we control the basin approaches.' },
+      { who: 'leader', text: 'Prep a squad. We move at first light.' }
+    ]
+  },
+  mid_game: {
+    id: 'mid_game',
+    title: 'The Pattern',
+    lines: [
+      { who: 'savannah', text: 'I\'ve been reading the signals. The Vorrh aren\'t random. They\'re building something under Echo Depths.' },
+      { who: 'leader', text: 'Building what?' },
+      { who: 'savannah', text: 'A node. A brain. If it finishes, every infected on the planet becomes one mind.' },
+      { who: 'gritt', text: 'Then we burn it before it wakes.' }
+    ]
+  },
+  late_game: {
+    id: 'late_game',
+    title: 'Foxtrot Gate',
+    lines: [
+      { who: 'leader', text: 'Foxtrot is the last gate. Beyond it is the core.' },
+      { who: 'susan', text: 'Half our people are gone. The rest are running on stims and spite.' },
+      { who: 'mike', text: 'Spite\'s enough. Let\'s end this.' },
+      { who: 'leader', text: 'All squads. Final push. For everyone we left behind.' }
+    ]
+  }
+};
+
+const PORTRAITS = {
+  leader: null, // filled from state.leader
+  sarge: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/marine1_orig.png',
+  susan: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/suszan_orig.png',
+  mike: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/mike_orig.png',
+  gritt: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/grift_orig.png',
+  duke: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/duke_orig.png',
+  vanessa: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/vanessa_orig.png',
+  savannah: 'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/savannah_orig.png'
+};
+
+function playCutscene(storyId, onDone){
+  const scene = STORY[storyId];
+  if(!scene){ if(onDone) onDone(); return; }
+  if(!state.storySeen) state.storySeen = {};
+  if(state.storySeen[storyId]){ if(onDone) onDone(); return; }
+  state.storySeen[storyId] = true;
+
+  const leaderImg = state.leader ? state.leader.img : PORTRAITS.sarge;
+  const leaderName = state.leader ? (state.leader.rank + ' ' + state.leader.name) : 'Commander';
+
+  let lineIdx = 0;
+  function showLine(){
+    if(lineIdx >= scene.lines.length){
+      closeDetail();
+      saveGame();
+      if(onDone) onDone();
+      return;
+    }
+    // Build all lines up to current
+    let body = '<div class="cutscene-box">';
+    for(let i=0; i<=lineIdx; i++){
+      const L = scene.lines[i];
+      const isLeader = L.who === 'leader';
+      const img = isLeader ? leaderImg : (PORTRAITS[L.who] || PORTRAITS.sarge);
+      const who = isLeader ? leaderName : (
+        L.who==='sarge'?'Sgt. Harlan':
+        L.who==='susan'?'Lt. Voss':
+        L.who==='mike'?'Cpt. Draven':
+        L.who==='gritt'?'Sgt. Kane':
+        L.who==='duke'?'Cpl. Reyes':
+        L.who==='vanessa'?'Lt. Cross':
+        L.who==='savannah'?'Spc. Holt': L.who
+      );
+      body += `<div class="cutscene-line">
+        <img src="${img}" alt="">
+        <div><div class="who">${who}</div><div class="what">${L.text}</div></div>
+      </div>`;
+    }
+    body += '</div>';
+
+    const isLast = lineIdx >= scene.lines.length - 1;
+    showDetail(scene.title, body, [
+      { text: isLast ? 'Continue' : 'Next →', action: ()=>{ lineIdx++; showLine(); } }
+    ]);
+  }
+  showLine();
+}
+
+function checkStoryTriggers(){
+  if(!state.storySeen) state.storySeen = {};
+  // After first victory
+  if(state.mission >= 1 && !state.storySeen.first_victory && state.phase==='outpost'){
+    // handled in endCombat
+  }
+  // Charlie unlocked
+  const charlie = state.sectors.find(s=>s.id==='charlie');
+  if(charlie && charlie.unlocked && !state.storySeen.charlie_unlock){
+    setTimeout(()=>playCutscene('charlie_unlock'), 600);
+  }
+  // Mid game - 3+ sectors unlocked
+  const unlocked = state.sectors.filter(s=>s.unlocked).length;
+  if(unlocked >= 4 && !state.storySeen.mid_game){
+    setTimeout(()=>playCutscene('mid_game'), 800);
+  }
+  // Late - foxtrot unlocked
+  const fox = state.sectors.find(s=>s.id==='foxtrot');
+  if(fox && fox.unlocked && !state.storySeen.late_game){
+    setTimeout(()=>playCutscene('late_game'), 800);
+  }
+}
 
 function saveGame(){
   try{
@@ -478,7 +648,7 @@ document.getElementById('game').classList.add('active');
 document.getElementById('cmdName').textContent=`${state.leader.rank} ${state.leader.name} ${state.leader.last}`;
 addTx('Command','Hive Command online.','ok');
 renderAll();
-showDetail(`Welcome, ${state.leader.rank} ${state.leader.name}`,`The Vorrh have taken the surface. They do not conquer — they convert. You are the last organised command. Deploy carefully. Some transmissions will stop mid-sentence.`,[{text:'Acknowledged',action:closeDetail}]);
+setTimeout(()=>playCutscene('intro'), 400);
 }
 function getCurrentSquad(){return state.currentSector?(state.sectorSquads[state.currentSector]||[]):[];}
 function renderAll(){updateRes();renderLeft(document.querySelector('#leftPanel')?.closest('.panel')?.querySelector('.tab.active')?.dataset.tab||'sectors');renderRight(document.querySelector('#rightPanel')?.closest('.panel')?.querySelector('.tab.active')?.dataset.tab||'squad');renderBattlefield();}
@@ -555,7 +725,7 @@ if(!state.enemies.length)es.innerHTML='<div class="empty">Sector clear</div>';
 else state.enemies.forEach((e,i)=>{const el=document.createElement('div');el.className='combat-card enemy'+(e.hp<=0?' dead':'');
 const hp=Math.max(0,(e.hp/e.maxHp)*100);
 el.innerHTML=`<img src="${e.img}"><div><div style="font-weight:700;font-size:.75rem">${e.name}</div><div class="bar" style="width:65px"><div class="bar-fill" style="width:${hp}%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div></div>`;
-el.onclick=()=>{if(e.hp<=0)return;if(!state.selectedUnit){toast('Select a unit first','warn');return;}performAttack(state.selectedUnit,i);};es.appendChild(el);});
+el.onclick=()=>{if(e.hp<=0)return;if(!state.selectedUnit){showEnemyDetail(e);return;}performAttack(state.selectedUnit,i);};es.appendChild(el);});
 }
 function selectSector(id){const s=state.sectors.find(x=>x.id===id);if(!s||!s.unlocked)return;state.currentSector=id;
 document.getElementById('missionTitle').textContent=s.name;document.getElementById('missionSub').textContent=s.desc+(state.sectorSquads[id]?.length?` • ${state.sectorSquads[id].length} deployed`:'');
@@ -745,6 +915,32 @@ function getMovesForUnit(unit){
 
 let battleState = null;
 
+
+function showEnemyDetail(e){
+  const pct = Math.max(0, Math.floor((e.hp/(e.maxHp||e.hp))*100));
+  showDetail(e.name, `
+    <div style="text-align:center">
+      <img src="${e.img}" style="width:130px;height:130px;object-fit:contain;background:#0a0c12;border-radius:8px;margin-bottom:10px">
+      <div style="color:var(--danger);font-weight:800;font-size:1rem;margin-bottom:6px">VORRH HOSTILE</div>
+    </div>
+    <div class="building-stat-grid">
+      <div class="building-stat"><div class="label">HP</div>${e.hp} / ${e.maxHp||e.hp}</div>
+      <div class="building-stat"><div class="label">DAMAGE</div>${e.dmg||'?'}</div>
+      <div class="building-stat"><div class="label">SANITY DMG</div>${e.sanDmg||'?'}</div>
+      <div class="building-stat"><div class="label">STATUS</div>${e.hp<=0?'DESTROYED':pct>60?'AGGRESSIVE':pct>30?'WOUNDED':'CRITICAL'}</div>
+    </div>
+    <div style="font-size:0.8rem;color:var(--muted);margin-top:8px;line-height:1.45">
+      ${e.name.includes('Drone')?'Scouting organism. Weak alone but swarms quickly.':
+        e.name.includes('Stalker')?'Ambush predator. High sanity pressure. Prefer to strike from fog.':
+        e.name.includes('Warrior')?'Front-line combat form. Armoured carapace.':
+        e.name.includes('Husk')?'Infected human shell. Unpredictable and resilient.':
+        e.name.includes('Elite')?'Command-caste Vorrh. Extremely dangerous.':
+        'Hostile Vorrh organism.'}
+    </div>
+    <div style="font-size:0.72rem;color:var(--accent);margin-top:10px">Select one of your units first, then click this enemy to attack.</div>
+  `, [{text:'Close', action:closeDetail}]);
+}
+
 function performAttack(unitId, enemyIdx){
   const squad = getCurrentSquad();
   const unit = squad.find(u => u.id === unitId);
@@ -906,7 +1102,7 @@ function enemyPokeTurn(){
   const enemySprite = document.getElementById('pokeEnemySprite');
 
   // Debuff reduces damage
-  let dmg = enemy.dmg + Math.floor(Math.random()*5) - 1;
+  let dmg = Math.min(enemy.dmg + Math.floor(Math.random()*4), Math.floor((unit.maxHp||100)*0.45)); // cap ~45% maxHP per hit
   if(battleState.enemyDebuffed){
     dmg = Math.max(1, Math.floor(dmg * 0.6));
     battleState.enemyDebuffed = false;
@@ -925,24 +1121,31 @@ function enemyPokeTurn(){
   setTimeout(() => {
     enemySprite.classList.remove('enemy-attack');
     playerSprite.classList.add('hurt');
-    unit.hp = Math.max(0, unit.hp - dmg);
-    // Force exact 0 display when dead
-    if(unit.hp <= 0) unit.hp = 0;
+    // Apply damage properly
+    const prevHp = unit.hp;
+    unit.hp = Math.max(0, Math.floor(unit.hp - dmg));
+    if(unit.hp < 0) unit.hp = 0;
     const sanLoss = state.leader?.bonus==='Hardened' ? Math.floor(enemy.sanDmg*0.55) : enemy.sanDmg;
     const finalSan = (state.buildings||[]).some(b=>b.id==='sanctuary' && !b.building) ? Math.floor(sanLoss*0.7) : sanLoss;
     state.sanity = Math.max(0, state.sanity - finalSan);
+
+    // Force HP bar + text update (immediate, no stale values)
+    const maxH = unit.maxHp || 100;
+    const pct = unit.hp <= 0 ? 0 : Math.max(0, Math.min(100, (unit.hp / maxH) * 100));
     const hpEl = document.getElementById('pokePlayerHp');
-    if(hpEl) {
-      hpEl.style.width = (unit.hp <= 0 ? 0 : Math.max(0, unit.hp/unit.maxHp*100)) + '%';
+    if(hpEl){
+      hpEl.style.transition = 'width 0.4s ease';
+      hpEl.style.width = pct + '%';
+      if(unit.hp <= 0) hpEl.style.background = '#333';
     }
-    // Update HP text if present
-    const hpBox = hpEl ? hpEl.closest('.poke-hp-box') : null;
-    if(hpBox){
-      const txt = hpBox.querySelector('div[style*="font-size:0.7rem"]');
-      if(txt) txt.textContent = Math.max(0, unit.hp) + ' / ' + unit.maxHp + ' HP';
-    }
+    // Update every HP text node in the player box
+    document.querySelectorAll('.poke-player .poke-hp-box div').forEach(el=>{
+      if(el.textContent && el.textContent.includes('/')){
+        el.textContent = unit.hp + ' / ' + maxH + ' HP';
+      }
+    });
     floatDmg(playerSprite, dmg);
-    log.textContent = unit.name + ' took ' + dmg + ' damage!' + (unit.hp<=0 ? ' — FATAL' : '');
+    log.textContent = unit.name + ' took ' + dmg + ' damage! (' + prevHp + ' → ' + unit.hp + ')' + (unit.hp<=0 ? ' — FATAL' : '');
 
 
     setTimeout(() => {
@@ -955,15 +1158,18 @@ function enemyPokeTurn(){
         log.textContent = unit.name + ' has fallen!';
         setTimeout(() => {
           closeDetail();
-          showDetail('UNIT DOWN', `<div style="text-align:center;padding:10px">
-            <img src="${unit.img}" style="width:100px;height:100px;object-fit:contain;filter:grayscale(1);opacity:0.5;margin-bottom:10px">
-            <div style="color:var(--danger);font-weight:800;font-size:1.15rem">${unit.name}</div>
-            <div style="color:var(--muted);margin-top:6px">Killed in action against ${enemy.name}</div>
+          showDetail('UNIT DOWN', `<div class="death-scene">
+            <img src="${unit.img}" alt="">
+            <div style="color:var(--danger);font-weight:900;font-size:1.2rem;letter-spacing:1px">KIA</div>
+            <div style="font-weight:800;font-size:1.05rem;margin-top:6px">${unit.name}</div>
+            <div style="color:var(--muted);margin-top:6px;font-size:0.85rem">Killed in action by ${enemy.name}</div>
+            <div style="color:var(--muted);font-size:0.75rem;margin-top:4px">${unit.rank} • ${unit.role}</div>
           </div>`, [{text:'Continue', action:()=>{
             closeDetail();
             const living = getCurrentSquad().filter(u=>u.hp>0);
-            if(living.length===0) endCombat(false);
-            else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
+            if(living.length===0){
+              playSquadWipe(getCurrentSquad(), enemy.name);
+            } else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
           }}]);
         }, 1000);
         return;
@@ -1042,6 +1248,28 @@ if(livingU.every(u=>u.hp<=0))endCombat(false);renderBattlefield();renderRight('s
 function endTurn(){if(state.phase!=='combat')return;getCurrentSquad().forEach(u=>u.acted=false);
 state.enemies.filter(e=>e.hp>0).forEach(()=>{if(Math.random()<.65)enemyTurn();});state.turn++;state.retreatedThisTurn=false;
 state.sanity=Math.max(0,state.sanity-2);updateRes();renderBattlefield();renderRight('squad');toast('New turn — units ready','ok');}
+
+function playSquadWipe(squad, killer){
+  const names = (squad||[]).map(u=>u.name).join(', ');
+  const imgs = (squad||[]).slice(0,4).map(u=>`<img src="${u.img}" style="width:48px;height:48px;object-fit:contain;filter:grayscale(1);opacity:0.45;margin:0 3px">`).join('');
+  showDetail('SQUAD LOST', `
+    <div class="squad-wipe-scene">
+      <div class="skull">☠</div>
+      <div style="color:var(--danger);font-weight:900;font-size:1.3rem;margin:10px 0;letter-spacing:2px">SQUAD WIPED</div>
+      <div style="margin:12px 0">${imgs}</div>
+      <div style="color:var(--muted);font-size:0.85rem;line-height:1.5;max-width:360px;margin:0 auto">
+        All units have fallen. ${killer? 'Last contact: '+killer+'.' : ''}
+        <br><span style="color:var(--text)">${names||'Unknown personnel'}</span>
+      </div>
+      <div style="margin-top:14px;font-size:0.75rem;color:var(--danger)">No survivors. Sector compromised.</div>
+    </div>
+  `, [{text:'Return to Command', action:()=>{
+    closeDetail();
+    endCombat(false);
+  }}]);
+  addTx('Command','Squad lost. No survivors. Signal dark.','danger', true);
+}
+
 function endCombat(victory){
   state.phase='outpost';state.enemies=[];state.selectedUnit=null;
   document.getElementById('missionPhase').textContent='OUTPOST';
@@ -1052,21 +1280,22 @@ function endCombat(victory){
   const squad = getCurrentSquad();
   const living = squad.filter(u=>u.hp>0);
   if(living.length===0 && squad.length>0){
-    showDetail('SQUAD WIPED',`All units in this sector have been lost. The Vorrh have taken the ground.<br><br>Casualties: ${squad.map(u=>u.name).join(', ')}`,
-      [{text:'Acknowledge',action:()=>{closeDetail(); 
-        // remove dead squad from sector
-        state.sectorSquads[state.currentSector]=[];
-        renderAll(); saveGame();
-      }}]);
-    addTx('Command','Squad lost. No survivors.','danger');
+    state.sectorSquads[state.currentSector]=[];
+    playSquadWipe(squad, 'Vorrh forces');
+    return;
   } else if(victory){
     state.scrap+=28;state.bio+=10;
     addTx('Command','Sector secured.','ok');toast('Sector secured','ok');
     const s=state.sectors.find(x=>x.id===state.currentSector);if(s)s.status='secured';
     if(Math.random()<.38)unlockNextSector();
+    if(!state.storySeen) state.storySeen={};
+    if(!state.storySeen.first_victory) setTimeout(()=>playCutscene('first_victory'), 500);
+    else checkStoryTriggers();
   } else {
     addTx('Command','Forced extraction. Casualties sustained.','danger');
     state.sanity=Math.max(10,state.sanity-12);toast('Forced retreat','danger');
+    if(!state.storySeen) state.storySeen={};
+    if(!state.storySeen.first_loss) setTimeout(()=>playCutscene('first_loss'), 500);
   }
   saveGame();
   renderAll();
@@ -1384,6 +1613,71 @@ function recruitUnit(type){
 }
 
 
+
+
+function openMine(){
+  if(state.phase==='combat'){toast('Cannot mine during combat','warn');return;}
+  showDetail('Resource Extraction', `
+    <div class="mine-panel">
+      <div style="font-size:2rem;margin-bottom:8px">⛏️</div>
+      <div style="font-size:0.85rem;color:var(--muted);margin-bottom:8px;line-height:1.45">
+        Deploy drills into the planetary crust. Yield varies by sector. Risk of attracting Vorrh attention.
+      </div>
+      <div class="mine-bar"><div class="mine-fill" id="mineFill"></div></div>
+      <div id="mineStatus" style="font-size:0.8rem;color:var(--accent)">Ready to extract</div>
+    </div>
+  `, [
+    {text:'Start Mining (30s)', action: startMining},
+    {text:'Close', action: closeDetail}
+  ]);
+}
+function startMining(){
+  const fill = document.getElementById('mineFill');
+  const status = document.getElementById('mineStatus');
+  if(!fill) return;
+  // Disable double-start
+  const btns = document.querySelectorAll('#detailChoices .btn');
+  btns.forEach(b=>b.disabled=true);
+  let pct = 0;
+  status.textContent = 'Drilling...';
+  const iv = setInterval(()=>{
+    pct += 2;
+    fill.style.width = pct + '%';
+    if(pct >= 30) status.textContent = 'Core sample acquired...';
+    if(pct >= 60) status.textContent = 'Refining ore...';
+    if(pct >= 90) status.textContent = 'Hauling to surface...';
+    if(pct >= 100){
+      clearInterval(iv);
+      const threat = (state.sectors.find(s=>s.id===state.currentSector)||{}).threat || 1;
+      const scrapGain = 8 + Math.floor(Math.random()*12) + threat*2;
+      const bioGain = Math.random()<0.3 ? 2+Math.floor(Math.random()*4) : 0;
+      state.scrap += scrapGain;
+      if(bioGain) state.bio += bioGain;
+      status.textContent = 'Extracted +'+scrapGain+' Scrap'+(bioGain?' +'+bioGain+' Bio':'');
+      toast('Mining complete: +'+scrapGain+' Scrap','ok');
+      updateRes(); saveGame();
+      // Risk of attracting enemies
+      if(Math.random() < 0.15 + threat*0.05){
+        setTimeout(()=>{
+          addTx('Sensors','Mining vibration drew attention. Contacts inbound.','warn', true);
+          toast('Mining attracted hostiles!','danger');
+        }, 600);
+      }
+      btns.forEach(b=>{b.disabled=false;});
+      // Replace buttons
+      const ch = document.getElementById('detailChoices');
+      if(ch){
+        ch.innerHTML = '';
+        const b = document.createElement('button');
+        b.className = 'btn primary';
+        b.style.cssText = 'width:100%;margin-top:5px';
+        b.textContent = 'Close';
+        b.onclick = closeDetail;
+        ch.appendChild(b);
+      }
+    }
+  }, 300); // ~30 seconds
+}
 
 function openTravel(){
   const unlocked = state.sectors.filter(s=>s.unlocked);
