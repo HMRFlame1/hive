@@ -1030,9 +1030,16 @@ function renderBattlefield(){
   const vehs = (state.vehicles||[]).filter(v=>v.deployed && v.sector===state.currentSector);
   vehs.forEach(v=>{
     const el = document.createElement('div');
-    el.className = 'veh-on-field';
-    el.innerHTML = '<img src="'+v.img+'"><div><div class="v-tag">SUPPORT</div><div class="c-name">'+v.name+'</div><div class="c-meta">Providing cover fire</div></div>';
-    el.onclick = ()=>toast(v.name+' is providing fire support this engagement','ok');
+    el.className = 'veh-on-field'+(state.selectedVehicle===v.id?' selected':'')+(v.acted?' acted':'');
+    el.style.borderColor = state.selectedVehicle===v.id ? 'var(--accent)' : '';
+    el.innerHTML = '<img src="'+v.img+'"><div><div class="v-tag">'+(v.acted?'FIRED':'VEHICLE')+'</div><div class="c-name">'+v.name+'</div><div class="c-meta">'+(v.acted?'Already acted':'Click to attack')+'</div></div>';
+    el.onclick = ()=>{
+      if(v.acted){ toast(v.name+' already fired this turn','warn'); return; }
+      state.selectedUnit = null;
+      state.selectedVehicle = v.id;
+      renderBattlefield();
+      toast(v.name+' selected, click an enemy','ok');
+    };
     ps.appendChild(el);
   });
 
@@ -1056,9 +1063,10 @@ function renderBattlefield(){
     const el = document.createElement('div');
     el.className = 'combat-card enemy'+(e.hp<=0?' dead':'');
     const hp = Math.max(0,(e.hp/(e.maxHp||1))*100);
-    el.innerHTML = '<img src="'+e.img+'"><div class="c-info"><div class="c-name">'+e.name+'</div><div class="c-meta">DMG '+(e.dmg||'?')+' · HP '+e.hp+'</div><div class="bar"><div class="bar-fill" style="width:'+hp+'%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div></div>';
+    el.innerHTML = '<img src="'+e.img+'"><div class="c-info"><div class="c-name">'+e.name+(e.isVehicle?' ⚙':'')+'</div><div class="c-meta">'+(e.isVehicle?'ARMOR':'INFANTRY')+' · DMG '+(e.dmg||'?')+' · HP '+e.hp+'</div><div class="bar"><div class="bar-fill" style="width:'+hp+'%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div></div>';
     el.onclick = ()=>{
       if(e.hp<=0) return;
+      if(state.selectedVehicle){ performVehicleAttack(state.selectedVehicle, i); return; }
       if(!state.selectedUnit){ showEnemyDetail(e); return; }
       performAttack(state.selectedUnit, i);
     };
@@ -1164,17 +1172,94 @@ showDetail('Distress Signal','A previous transmission just cut out mid-sentence.
 beginCombat();
 }
 function beginCombat(){
-const sector=state.sectors.find(s=>s.id===state.currentSector);
-state.phase='combat';state.mission++;state.turn=1;state.selectedUnit=null;state.retreatedThisTurn=false;
-state.trapped=Math.random()<0.2+(sector?.threat||1)*0.07;getCurrentSquad().forEach(u=>u.acted=false);
-const count=Math.min(2+(sector?.threat||1),5);state.enemies=[];
-for(let i=0;i<count;i++){const t=VORRH[Math.min((sector?.threat||1)-1+Math.floor(Math.random()*2),VORRH.length-1)];
-state.enemies.push({name:t.name,img:t.img,hp:t.hp+Math.floor(Math.random()*12),maxHp:t.hp+12,dmg:t.dmg,sanDmg:t.sanDmg});}
-document.getElementById('missionPhase').textContent='COMBAT';document.getElementById('btnDeploy').style.display='none';
-document.getElementById('btnEndTurn').style.display='inline-block';document.getElementById('btnRetreat').style.display='inline-block';document.getElementById('btnExtract').style.display='inline-block';
-addTx('Squad',`Contact in ${sector?.name}. ${count} Vorrh.`,'warn');toast(`Engaging ${count} Vorrh`,'danger');renderBattlefield();renderRight('squad');
-}
+  const sector = state.sectors.find(s=>s.id===state.currentSector);
+  state.phase = 'combat';
+  state.mission++;
+  state.turn = 1;
+  state.selectedUnit = null;
+  state.selectedVehicle = null;
+  state.retreatedThisTurn = false;
+  state.trapped = Math.random() < 0.2 + (sector?.threat||1)*0.07;
+  getCurrentSquad().forEach(u=>{ u.acted = false; });
+  // Reset vehicle acted flags for this sector
+  (state.vehicles||[]).forEach(v=>{
+    if(v.deployed && v.sector===state.currentSector) v.acted = false;
+  });
 
+  // Varied enemy force size
+  const threat = sector?.threat || 1;
+  const roll = Math.random();
+  let count;
+  if(roll < 0.12) count = 1;                          // rare lone contact
+  else if(roll < 0.28) count = 2;
+  else if(roll < 0.55) count = 3 + Math.floor(Math.random()*2); // 3-4
+  else if(roll < 0.8) count = 5 + Math.floor(Math.random()*3);  // 5-7
+  else count = 8 + Math.floor(Math.random()*5);       // 8-12 swarm
+  // Scale a bit by threat
+  count = Math.max(1, Math.min(14, count + Math.floor((threat-1)/2)));
+
+  state.enemies = [];
+  for(let i=0; i<count; i++){
+    const tIdx = Math.min((threat-1) + Math.floor(Math.random()*2), VORRH.length-1);
+    const t = VORRH[Math.max(0, tIdx)];
+    state.enemies.push({
+      id: 'e'+i+'_'+Date.now(),
+      name: t.name,
+      img: t.img,
+      hp: t.hp + Math.floor(Math.random()*15),
+      maxHp: t.hp + 15,
+      dmg: t.dmg,
+      sanDmg: t.sanDmg,
+      isVehicle: false
+    });
+  }
+
+  // Chance of enemy vehicles
+  const enemyVehPool = [
+    {name:'Vorrh Patrol Craft', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/al1_orig.png', hp:90, dmg:18, sanDmg:6},
+    {name:'Vorrh Armor', img:'https://www.gamecircuit.co.uk/uploads/1/5/2/9/152994747/al2_orig.png', hp:140, dmg:24, sanDmg:8}
+  ];
+  const vehChance = 0.15 + threat * 0.08;
+  if(Math.random() < vehChance){
+    const ev = enemyVehPool[Math.floor(Math.random()*enemyVehPool.length)];
+    state.enemies.push({
+      id: 'ev_'+Date.now(),
+      name: ev.name,
+      img: ev.img,
+      hp: ev.hp,
+      maxHp: ev.hp,
+      dmg: ev.dmg,
+      sanDmg: ev.sanDmg,
+      isVehicle: true
+    });
+  }
+  // Heavy swarm may bring 2 vehicles
+  if(count >= 8 && Math.random() < 0.35){
+    const ev = enemyVehPool[0];
+    state.enemies.push({
+      id: 'ev2_'+Date.now(),
+      name: ev.name,
+      img: ev.img,
+      hp: ev.hp,
+      maxHp: ev.hp,
+      dmg: ev.dmg,
+      sanDmg: ev.sanDmg,
+      isVehicle: true
+    });
+  }
+
+  document.getElementById('missionPhase').textContent = 'COMBAT';
+  document.getElementById('btnDeploy').style.display = 'none';
+  document.getElementById('btnEndTurn').style.display = 'inline-block';
+  document.getElementById('btnRetreat').style.display = 'inline-block';
+  document.getElementById('btnExtract').style.display = 'inline-block';
+
+  const vehCount = state.enemies.filter(e=>e.isVehicle).length;
+  addTx('Squad', 'Contact in '+(sector?.name||'sector')+'. '+count+' hostiles'+(vehCount?' + '+vehCount+' armor':'')+'.', 'warn');
+  toast('Engaging '+state.enemies.length+' contacts','danger');
+  renderBattlefield();
+  renderRight('squad');
+}
 
 
 function getMovesForUnit(unit){
@@ -1330,6 +1415,141 @@ function spawnFx(type, anchorEl){
     field.classList.add('fx-shake');
     setTimeout(()=>field.classList.remove('fx-shake'), 450);
   }
+}
+
+
+
+function getVehicleMoves(v){
+  const type = (v.type||'').toLowerCase();
+  if(type==='transport'){
+    return [
+      { name:'Door Gun', dmg:14, type:'BALLISTIC', desc:'Mounted gunfire' },
+      { name:'Suppressing Sweep', dmg:10, type:'SUPPRESS', desc:'Pin hostiles', debuff:true },
+      { name:'Smoke Screen', dmg:0, type:'TACTICAL', desc:'Cover for infantry' },
+      { name:'Ramming Speed', dmg:20, type:'IMPACT', desc:'High risk charge' }
+    ];
+  }
+  if(type==='recon'){
+    return [
+      { name:'Scout Burst', dmg:12, type:'BALLISTIC', desc:'Light fire' },
+      { name:'Target Paint', dmg:6, type:'TACTICAL', desc:'Mark for bonus damage', debuff:true },
+      { name:'Rapid Strafe', dmg:16, type:'RAPID', desc:'Fast attack run' },
+      { name:'Sensor Pulse', dmg:8, type:'TECH', desc:'Disrupt signals' }
+    ];
+  }
+  // armor / default tank
+  return [
+    { name:'Main Cannon', dmg:28, type:'HEAVY', desc:'Primary armament' },
+    { name:'Coax MG', dmg:14, type:'BALLISTIC', desc:'Secondary fire' },
+    { name:'HE Shell', dmg:34, type:'EXPLOSIVE', desc:'High explosive' },
+    { name:'Hull Down', dmg:0, type:'DEFENSE', desc:'Fortify position', fortify:true }
+  ];
+}
+
+function performVehicleAttack(vid, enemyIdx){
+  const v = (state.vehicles||[]).find(x=>x.id===vid);
+  const enemy = state.enemies[enemyIdx];
+  if(!v || !enemy || enemy.hp<=0){ toast('Invalid target','warn'); return; }
+  if(v.acted){ toast(v.name+' already acted','warn'); return; }
+
+  const moves = getVehicleMoves(v);
+  battleState = { unit: null, vehicle: v, enemyIdx, enemy, turn:'player', canFlee:false, gen:Date.now(), isVehicle:true };
+
+  const box = document.getElementById('detailBox');
+  box.classList.add('wide', 'battle-modal');
+  box.innerHTML = `
+    <button class="modal-close" onclick="closeDetail()" title="Close">×</button>
+    <div class="poke-battle">
+      <div class="poke-field">
+        <div class="poke-player">
+          <div class="poke-hp-box">
+            <div class="name">${v.name}</div>
+            <div class="lvl">VEHICLE · ${(v.type||'armor').toUpperCase()}</div>
+            <div class="poke-hp-bar"><div class="poke-hp-fill hp-fill" style="width:100%"></div></div>
+          </div>
+          <img class="poke-sprite" id="pokePlayerSprite" src="${v.img}" alt="">
+        </div>
+        <div class="poke-enemy">
+          <div class="poke-hp-box">
+            <div class="name" style="color:var(--danger)">${enemy.name}</div>
+            <div class="lvl">${enemy.isVehicle?'ENEMY ARMOR':'VORRH'}</div>
+            <div class="poke-hp-bar"><div class="poke-hp-fill" id="pokeEnemyHp" style="width:${Math.max(0,enemy.hp/enemy.maxHp*100)}%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${enemy.hp} / ${enemy.maxHp} HP</div>
+          </div>
+          <img class="poke-sprite" id="pokeEnemySprite" src="${enemy.img}" alt="">
+        </div>
+      </div>
+      <div class="poke-log" id="pokeLog">Select a weapon system for ${v.name}</div>
+      <div class="poke-moves" id="pokeMoves"></div>
+      <div class="poke-actions"><button class="btn" onclick="closeDetail()">BACK</button></div>
+    </div>
+  `;
+  const movesEl = document.getElementById('pokeMoves');
+  moves.forEach(m=>{
+    const btn = document.createElement('div');
+    btn.className = 'poke-move';
+    btn.innerHTML = m.name+'<div class="pp">'+m.type+' · '+(m.dmg?('DMG ~'+m.dmg):m.desc)+'</div>';
+    btn.onclick = ()=>executeVehicleMove(m);
+    movesEl.appendChild(btn);
+  });
+  document.getElementById('detailOverlay').classList.add('active');
+}
+
+function executeVehicleMove(move){
+  if(!battleState || !battleState.vehicle) return;
+  const v = battleState.vehicle;
+  const enemy = battleState.enemy;
+  const log = document.getElementById('pokeLog');
+  const playerSprite = document.getElementById('pokePlayerSprite');
+  const enemySprite = document.getElementById('pokeEnemySprite');
+  document.getElementById('pokeMoves').style.pointerEvents = 'none';
+
+  if(move.dmg === 0){
+    if(log) log.textContent = v.name + ' uses ' + move.name + '!';
+    if(move.fortify) battleState.fortified = true;
+    v.acted = true;
+    state.selectedVehicle = null;
+    setTimeout(()=>{ closeDetail(); renderBattlefield(); toast(v.name+' held position','ok'); }, 800);
+    return;
+  }
+
+  const dmg = Math.max(1, move.dmg + Math.floor(Math.random()*6) - 2);
+  // Bonus vs enemy vehicles with heavy weapons
+  const finalDmg = (enemy.isVehicle && move.type==='HEAVY') ? Math.floor(dmg*1.2) : dmg;
+  if(log) log.textContent = v.name + ' fires ' + move.name + '!';
+  if(playerSprite) playerSprite.classList.add('attack','recoil');
+  if(typeof spawnFx==='function'){ spawnFx('muzzle', playerSprite); spawnFx('flash-player', playerSprite); }
+  if(typeof sfxAttack==='function') sfxAttack();
+
+  setTimeout(()=>{
+    if(playerSprite) playerSprite.classList.remove('attack','recoil');
+    if(enemySprite) enemySprite.classList.add('hurt');
+    if(typeof spawnFx==='function'){ spawnFx('impact', enemySprite); spawnFx('shake', enemySprite); }
+    if(typeof sfxHit==='function') sfxHit();
+    enemy.hp = Math.max(0, enemy.hp - finalDmg);
+    const hpEl = document.getElementById('pokeEnemyHp');
+    if(hpEl) hpEl.style.width = Math.max(0, enemy.hp/enemy.maxHp*100)+'%';
+    if(typeof floatDmg==='function') floatDmg(enemySprite, finalDmg);
+    if(log) log.textContent = enemy.name + ' took ' + finalDmg + ' damage!';
+
+    setTimeout(()=>{
+      if(enemySprite) enemySprite.classList.remove('hurt');
+      v.acted = true;
+      state.selectedVehicle = null;
+      if(enemy.hp <= 0){
+        if(enemySprite) enemySprite.classList.add('faint');
+        if(log) log.textContent = enemy.name + ' destroyed!';
+        state.scrap += enemy.isVehicle ? 20 : 10;
+        state.bio += 3;
+      }
+      battleState = null;
+      setTimeout(()=>{
+        closeDetail();
+        if(state.enemies.every(e=>e.hp<=0)) endCombat(true);
+        else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
+      }, 900);
+    }, 700);
+  }, 400);
 }
 
 
@@ -1692,6 +1912,8 @@ function endTurn(){
 
   // Reset player acted flags for next turn
   getCurrentSquad().forEach(u=>u.acted=false);
+  (state.vehicles||[]).forEach(v=>{ if(v.deployed && v.sector===state.currentSector) v.acted=false; });
+  state.selectedVehicle=null;
   state.turn++;
   state.retreatedThisTurn=false;
 
@@ -1751,7 +1973,7 @@ function playSquadWipe(squad, killer){
 }
 
 function endCombat(victory){
-  state.phase='outpost';state.enemies=[];state.selectedUnit=null;
+  state.phase='outpost';state.enemies=[];state.selectedUnit=null;state.selectedVehicle=null;
   document.getElementById('missionPhase').textContent='OUTPOST';
   document.getElementById('btnDeploy').style.display='inline-block';
   document.getElementById('btnEndTurn').style.display='none';
