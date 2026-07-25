@@ -1032,8 +1032,12 @@ function renderBattlefield(){
     const el = document.createElement('div');
     el.className = 'veh-on-field'+(state.selectedVehicle===v.id?' selected':'')+(v.acted?' acted':'');
     el.style.borderColor = state.selectedVehicle===v.id ? 'var(--accent)' : '';
-    el.innerHTML = '<img src="'+v.img+'"><div><div class="v-tag">'+(v.acted?'FIRED':'VEHICLE')+'</div><div class="c-name">'+v.name+'</div><div class="c-meta">'+(v.acted?'Already acted':'Click to attack')+'</div></div>';
+    if(v.hp==null){ v.maxHp=v.type==='armor'?160:v.type==='transport'?120:90; v.hp=v.maxHp; }
+    const vhp = Math.max(0, (v.hp/(v.maxHp||1))*100);
+    el.innerHTML = '<img src="'+v.img+'"><div style="flex:1"><div class="v-tag">'+(v.hp<=0?'DESTROYED':(v.acted?'FIRED':'VEHICLE'))+'</div><div class="c-name">'+v.name+'</div><div class="c-meta">HP '+Math.floor(v.hp)+'/'+v.maxHp+(v.acted?' · Acted':' · Ready')+'</div><div class="bar"><div class="bar-fill hp-fill" style="width:'+vhp+'%"></div></div></div>';
+    if(v.hp<=0) el.style.opacity='0.4';
     el.onclick = ()=>{
+      if(v.hp<=0){ toast(v.name+' is destroyed','warn'); return; }
       if(v.acted){ toast(v.name+' already fired this turn','warn'); return; }
       state.selectedUnit = null;
       state.selectedVehicle = v.id;
@@ -1423,26 +1427,25 @@ function getVehicleMoves(v){
   const type = (v.type||'').toLowerCase();
   if(type==='transport'){
     return [
-      { name:'Door Gun', dmg:14, type:'BALLISTIC', desc:'Mounted gunfire' },
-      { name:'Suppressing Sweep', dmg:10, type:'SUPPRESS', desc:'Pin hostiles', debuff:true },
-      { name:'Smoke Screen', dmg:0, type:'TACTICAL', desc:'Cover for infantry' },
-      { name:'Ramming Speed', dmg:20, type:'IMPACT', desc:'High risk charge' }
+      { name:'Door Gun', dmg:22, type:'BALLISTIC', desc:'Mounted gunfire' },
+      { name:'Suppressing Sweep', dmg:16, type:'SUPPRESS', desc:'Hits 2 enemies', multi:2, debuff:true },
+      { name:'Area Barrage', dmg:14, type:'AREA', desc:'Hits all hostiles', multi:99 },
+      { name:'Ramming Speed', dmg:32, type:'IMPACT', desc:'High damage charge' }
     ];
   }
   if(type==='recon'){
     return [
-      { name:'Scout Burst', dmg:12, type:'BALLISTIC', desc:'Light fire' },
-      { name:'Target Paint', dmg:6, type:'TACTICAL', desc:'Mark for bonus damage', debuff:true },
-      { name:'Rapid Strafe', dmg:16, type:'RAPID', desc:'Fast attack run' },
-      { name:'Sensor Pulse', dmg:8, type:'TECH', desc:'Disrupt signals' }
+      { name:'Scout Burst', dmg:20, type:'BALLISTIC', desc:'Light fire' },
+      { name:'Strafing Run', dmg:18, type:'RAPID', desc:'Hits 3 enemies', multi:3 },
+      { name:'Target Paint', dmg:10, type:'TACTICAL', desc:'Mark + debuff', debuff:true },
+      { name:'Sensor Pulse', dmg:12, type:'TECH', desc:'Hits 2', multi:2 }
     ];
   }
-  // armor / default tank
   return [
-    { name:'Main Cannon', dmg:28, type:'HEAVY', desc:'Primary armament' },
-    { name:'Coax MG', dmg:14, type:'BALLISTIC', desc:'Secondary fire' },
-    { name:'HE Shell', dmg:34, type:'EXPLOSIVE', desc:'High explosive' },
-    { name:'Hull Down', dmg:0, type:'DEFENSE', desc:'Fortify position', fortify:true }
+    { name:'Main Cannon', dmg:42, type:'HEAVY', desc:'Primary armament' },
+    { name:'Coax MG', dmg:24, type:'BALLISTIC', desc:'Secondary fire' },
+    { name:'HE Shell', dmg:36, type:'EXPLOSIVE', desc:'Hits 2 in blast', multi:2 },
+    { name:'Saturation Fire', dmg:20, type:'AREA', desc:'Hits all hostiles', multi:99 }
   ];
 }
 
@@ -1465,7 +1468,8 @@ function performVehicleAttack(vid, enemyIdx){
           <div class="poke-hp-box">
             <div class="name">${v.name}</div>
             <div class="lvl">VEHICLE · ${(v.type||'armor').toUpperCase()}</div>
-            <div class="poke-hp-bar"><div class="poke-hp-fill hp-fill" style="width:100%"></div></div>
+            <div class="poke-hp-bar"><div class="poke-hp-fill hp-fill" style="width:${Math.max(0,((v.hp||v.maxHp||100)/(v.maxHp||100))*100)}%"></div></div>
+            <div style="font-size:0.7rem;color:var(--muted);margin-top:2px">${v.hp||0} / ${v.maxHp||0} HP</div>
           </div>
           <img class="poke-sprite" id="pokePlayerSprite" src="${v.img}" alt="">
         </div>
@@ -1498,25 +1502,32 @@ function performVehicleAttack(vid, enemyIdx){
 function executeVehicleMove(move){
   if(!battleState || !battleState.vehicle) return;
   const v = battleState.vehicle;
-  const enemy = battleState.enemy;
+  const primary = battleState.enemy;
   const log = document.getElementById('pokeLog');
   const playerSprite = document.getElementById('pokePlayerSprite');
   const enemySprite = document.getElementById('pokeEnemySprite');
-  document.getElementById('pokeMoves').style.pointerEvents = 'none';
+  const movesEl = document.getElementById('pokeMoves');
+  if(movesEl) movesEl.style.pointerEvents = 'none';
 
   if(move.dmg === 0){
     if(log) log.textContent = v.name + ' uses ' + move.name + '!';
-    if(move.fortify) battleState.fortified = true;
     v.acted = true;
     state.selectedVehicle = null;
     setTimeout(()=>{ closeDetail(); renderBattlefield(); toast(v.name+' held position','ok'); }, 800);
     return;
   }
 
-  const dmg = Math.max(1, move.dmg + Math.floor(Math.random()*6) - 2);
-  // Bonus vs enemy vehicles with heavy weapons
-  const finalDmg = (enemy.isVehicle && move.type==='HEAVY') ? Math.floor(dmg*1.2) : dmg;
-  if(log) log.textContent = v.name + ' fires ' + move.name + '!';
+  let targets = [];
+  if(move.multi && move.multi > 1){
+    const living = state.enemies.filter(e=>e.hp>0);
+    targets = [primary, ...living.filter(e=>e!==primary)];
+    targets = targets.slice(0, move.multi === 99 ? living.length : move.multi);
+  } else {
+    targets = [primary];
+  }
+
+  const baseDmg = Math.max(1, move.dmg + Math.floor(Math.random()*8) - 2);
+  if(log) log.textContent = v.name + ' fires ' + move.name + (targets.length>1 ? ' at '+targets.length+' targets!' : '!');
   if(playerSprite) playerSprite.classList.add('attack','recoil');
   if(typeof spawnFx==='function'){ spawnFx('muzzle', playerSprite); spawnFx('flash-player', playerSprite); }
   if(typeof sfxAttack==='function') sfxAttack();
@@ -1526,29 +1537,34 @@ function executeVehicleMove(move){
     if(enemySprite) enemySprite.classList.add('hurt');
     if(typeof spawnFx==='function'){ spawnFx('impact', enemySprite); spawnFx('shake', enemySprite); }
     if(typeof sfxHit==='function') sfxHit();
-    enemy.hp = Math.max(0, enemy.hp - finalDmg);
+
+    let report = [];
+    targets.forEach((t, i)=>{
+      let dmg = baseDmg;
+      if(i > 0) dmg = Math.max(1, Math.floor(dmg * (0.75 - i*0.05)));
+      if(t.isVehicle && move.type==='HEAVY') dmg = Math.floor(dmg * 1.25);
+      t.hp = Math.max(0, t.hp - dmg);
+      report.push(t.name + ' -'+dmg+(t.hp<=0?' KILL':''));
+      if(t.hp <= 0){ state.scrap += t.isVehicle ? 22 : 10; state.bio += 3; }
+    });
+
     const hpEl = document.getElementById('pokeEnemyHp');
-    if(hpEl) hpEl.style.width = Math.max(0, enemy.hp/enemy.maxHp*100)+'%';
-    if(typeof floatDmg==='function') floatDmg(enemySprite, finalDmg);
-    if(log) log.textContent = enemy.name + ' took ' + finalDmg + ' damage!';
+    if(hpEl && primary) hpEl.style.width = Math.max(0, primary.hp/primary.maxHp*100)+'%';
+    if(typeof floatDmg==='function') floatDmg(enemySprite, baseDmg);
+    if(log) log.textContent = report.join(' · ');
 
     setTimeout(()=>{
       if(enemySprite) enemySprite.classList.remove('hurt');
+      if(primary && primary.hp <= 0 && enemySprite) enemySprite.classList.add('faint');
       v.acted = true;
       state.selectedVehicle = null;
-      if(enemy.hp <= 0){
-        if(enemySprite) enemySprite.classList.add('faint');
-        if(log) log.textContent = enemy.name + ' destroyed!';
-        state.scrap += enemy.isVehicle ? 20 : 10;
-        state.bio += 3;
-      }
       battleState = null;
       setTimeout(()=>{
         closeDetail();
         if(state.enemies.every(e=>e.hp<=0)) endCombat(true);
         else { renderBattlefield(); renderRight('squad'); updateRes(); saveGame(); }
-      }, 900);
-    }, 700);
+      }, 1000);
+    }, 800);
   }, 400);
 }
 
@@ -2077,7 +2093,7 @@ function deployVehicleTo(vid, sid){
   saveGame();
 }
 
-function buyVehicle(v){if(state.scrap<v.cost){toast('Not enough Scrap','warn');return;}state.scrap-=v.cost;state.vehicles.push({...v, id: v.id+'_'+Date.now(), deployed:false, sector:null});toast(`Acquired ${v.name}`,'ok');updateRes();renderRight('vehicles');}
+function buyVehicle(v){if(state.scrap<v.cost){toast('Not enough Scrap','warn');return;}state.scrap-=v.cost;state.vehicles.push({...v, id: v.id+'_'+Date.now(), deployed:false, sector:null, hp: v.type==='armor'?160:v.type==='transport'?120:90, maxHp: v.type==='armor'?160:v.type==='transport'?120:90, acted:false});toast(`Acquired ${v.name}`,'ok');updateRes();renderRight('vehicles');}
 function addTx(from,msg,type='',showRadio=false){
   const now=new Date();
   const time=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
