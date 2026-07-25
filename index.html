@@ -2097,7 +2097,7 @@ setInterval(()=>{
 
 
 
-// ===== UI SOUND EFFECTS (Web Audio, no files needed) =====
+// ===== ALIEN / SCI-FI UI SOUND EFFECTS =====
 let _audioCtx = null;
 function getAudio(){
   if(!_audioCtx){
@@ -2107,46 +2107,83 @@ function getAudio(){
   if(_audioCtx.state === 'suspended') _audioCtx.resume();
   return _audioCtx;
 }
-function playTone(freq, dur, type, vol, slideTo){
+function playAlienTone(freq, dur, type, vol, slideTo, filterFreq){
   const ctx = getAudio();
   if(!ctx) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.type = type || 'square';
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = filterFreq || freq * 1.5;
+  filter.Q.value = 4;
+  osc.type = type || 'sawtooth';
   osc.frequency.setValueAtTime(freq, ctx.currentTime);
-  if(slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, ctx.currentTime + dur);
-  gain.gain.setValueAtTime(vol || 0.08, ctx.currentTime);
+  if(slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(20, slideTo), ctx.currentTime + dur);
+  gain.gain.setValueAtTime(vol || 0.06, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-  osc.connect(gain);
+  osc.connect(filter);
+  filter.connect(gain);
   gain.connect(ctx.destination);
   osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + dur + 0.02);
+  osc.stop(ctx.currentTime + dur + 0.03);
+}
+function playNoiseBurst(dur, vol, freq){
+  const ctx = getAudio();
+  if(!ctx) return;
+  const bufferSize = Math.floor(ctx.sampleRate * dur);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i] = (Math.random()*2-1) * Math.pow(1 - i/bufferSize, 1.5);
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = freq || 800;
+  filter.Q.value = 2;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(vol || 0.05, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  src.start();
 }
 function sfxHover(){
-  playTone(520, 0.04, 'sine', 0.04);
+  // Soft alien chirp
+  playAlienTone(740, 0.05, 'sine', 0.03, 920, 1100);
 }
 function sfxClick(){
-  playTone(280, 0.06, 'square', 0.07, 180);
-  setTimeout(()=>playTone(420, 0.04, 'sine', 0.05), 30);
+  // Glitchy confirm click
+  playAlienTone(180, 0.05, 'square', 0.05, 90, 400);
+  playNoiseBurst(0.04, 0.03, 1200);
+  setTimeout(()=>playAlienTone(480, 0.06, 'triangle', 0.035, 600, 900), 25);
 }
 function sfxSelect(){
-  playTone(360, 0.05, 'square', 0.06);
-  setTimeout(()=>playTone(520, 0.08, 'sine', 0.05, 700), 40);
+  // Scanner lock / selection
+  playAlienTone(220, 0.07, 'sawtooth', 0.04, 440, 600);
+  setTimeout(()=>playAlienTone(550, 0.1, 'sine', 0.045, 880, 1200), 50);
+  setTimeout(()=>playNoiseBurst(0.05, 0.025, 2000), 40);
 }
 function sfxAttack(){
-  playTone(120, 0.1, 'sawtooth', 0.09, 80);
-  setTimeout(()=>playTone(60, 0.15, 'square', 0.06), 50);
+  // Weapon discharge — alien pulse
+  playAlienTone(90, 0.12, 'sawtooth', 0.1, 45, 200);
+  playNoiseBurst(0.1, 0.07, 400);
+  setTimeout(()=>playAlienTone(150, 0.08, 'square', 0.05, 60, 300), 40);
 }
 function sfxHit(){
-  playTone(90, 0.12, 'sawtooth', 0.1, 40);
+  // Organic impact / wet hit
+  playNoiseBurst(0.12, 0.09, 250);
+  playAlienTone(70, 0.15, 'sawtooth', 0.08, 30, 120);
+  setTimeout(()=>playAlienTone(40, 0.1, 'sine', 0.04), 60);
 }
 function sfxSuccess(){
-  playTone(440, 0.08, 'sine', 0.06);
-  setTimeout(()=>playTone(660, 0.12, 'sine', 0.05), 80);
+  // Hive acknowledge
+  playAlienTone(300, 0.08, 'triangle', 0.04, 450, 700);
+  setTimeout(()=>playAlienTone(500, 0.1, 'sine', 0.04, 750, 1000), 70);
+  setTimeout(()=>playAlienTone(900, 0.12, 'sine', 0.03, 1200, 1600), 140);
 }
 
 function bindUiSounds(){
-  // Hover on interactive elements
   document.addEventListener('mouseover', (e)=>{
     const t = e.target.closest('.btn, .leader-card, .unit-card, .combat-card, .sector, .store-item, .veh-card, .poke-move, .tab');
     if(t && t !== bindUiSounds._lastHover){
@@ -2158,7 +2195,6 @@ function bindUiSounds(){
     const t = e.target.closest('.btn, .leader-card, .unit-card, .combat-card, .sector, .store-item, .veh-card, .poke-move, .tab');
     if(t && bindUiSounds._lastHover === t) bindUiSounds._lastHover = null;
   }, true);
-  // Click
   document.addEventListener('click', (e)=>{
     const t = e.target.closest('.btn, .leader-card, .unit-card, .combat-card, .sector, .store-item, .veh-card, .poke-move, .tab, .modal-close');
     if(t){
@@ -2167,11 +2203,9 @@ function bindUiSounds(){
     }
   }, true);
 }
-// Unlock audio on first user gesture
 document.addEventListener('click', function _unlock(){ getAudio(); document.removeEventListener('click', _unlock); }, true);
 document.addEventListener('DOMContentLoaded', bindUiSounds);
 if(document.readyState !== 'loading') bindUiSounds();
-
 
 // Always set up UI, then try load
 init();
