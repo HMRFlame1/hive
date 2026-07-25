@@ -2108,6 +2108,7 @@ function showRadioMessage(from, msg, type, time){
 }
 
 function runScan(){
+  if(typeof sfxSonar==='function') sfxSonar();
   const now = Date.now();
   const cd = 120000; // 2 minutes
   if(state.lastScan && now - state.lastScan < cd){
@@ -2630,8 +2631,45 @@ function playNoiseBurst(dur, vol, freq){
   src.start();
 }
 function sfxHover(){
-  // Soft alien chirp
-  playAlienTone(740, 0.05, 'sine', 0.03, 920, 1100);
+  // Soft swoosh / whoosh
+  const ctx = getAudio();
+  if(!ctx) return;
+  const dur = 0.12;
+  const bufferSize = Math.floor(ctx.sampleRate * dur);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){
+    const t = i / bufferSize;
+    // filtered noise envelope shaped like a pass-by
+    const env = Math.sin(Math.PI * t) * (1 - t * 0.3);
+    data[i] = (Math.random()*2-1) * env * 0.9;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(400, ctx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(1800, ctx.currentTime + dur);
+  filter.Q.value = 1.2;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.045, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  src.start();
+}
+function sfxSonar(){
+  // Classic sonar ping + echo
+  const ctx = getAudio();
+  if(!ctx) return;
+  // Main ping
+  playAlienTone(880, 0.15, 'sine', 0.08, 220, 1200);
+  // Echo
+  setTimeout(()=>playAlienTone(660, 0.2, 'sine', 0.04, 180, 900), 180);
+  setTimeout(()=>playAlienTone(440, 0.25, 'sine', 0.025, 120, 600), 380);
+  // Soft noise wash
+  setTimeout(()=>playNoiseBurst(0.2, 0.03, 600), 50);
 }
 function sfxClick(){
   // Glitchy confirm click
