@@ -454,6 +454,57 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   100%{transform:translateX(0)}
 }
 
+
+/* Enhanced battlefield */
+.battlefield {
+  flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+  padding: 12px; overflow-y: auto;
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(0,229,160,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(255,59,92,0.05) 0%, transparent 50%),
+    #080a0e;
+}
+.bf-col {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+  padding: 10px; min-height: 200px; display: flex; flex-direction: column;
+}
+.bf-col.enemy-col { border-color: #3a1520; background: linear-gradient(180deg, #120a0c 0%, #0f1118 100%); }
+.bf-col.player-col { border-color: #14302a; background: linear-gradient(180deg, #0a1512 0%, #0f1118 100%); }
+.side-title {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px;
+  color: var(--muted); margin-bottom: 8px; padding-bottom: 6px;
+  border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+}
+.side-title .count { background: var(--panel2); padding: 2px 8px; border-radius: 10px; font-size: 0.65rem; color: var(--accent); }
+.enemy-col .side-title .count { color: var(--danger); }
+.combat-card {
+  background: var(--panel2); border: 2px solid var(--border); border-radius: 10px;
+  padding: 8px 10px; margin-bottom: 8px; cursor: pointer;
+  display: flex; gap: 10px; align-items: center; transition: all 0.2s;
+  position: relative;
+}
+.combat-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.combat-card.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,229,160,0.35), 0 4px 14px rgba(0,229,160,0.15); }
+.combat-card.enemy { border-color: #4a1a1a; background: #140c0e; }
+.combat-card.enemy:hover { border-color: var(--danger); }
+.combat-card.dead { opacity: 0.3; filter: grayscale(0.8); pointer-events: none; }
+.combat-card.acted { opacity: 0.55; }
+.combat-card img { width: 52px; height: 52px; object-fit: contain; border-radius: 6px; background: #0a0c12; }
+.combat-card .c-info { flex: 1; min-width: 0; }
+.combat-card .c-name { font-weight: 700; font-size: 0.8rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.combat-card .c-meta { font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
+.combat-card .bar { height: 5px; background: #1a2030; border-radius: 3px; overflow: hidden; margin-top: 4px; width: 100%; }
+.veh-on-field {
+  background: linear-gradient(135deg, #121a24 0%, #0f1118 100%);
+  border: 2px solid #2a5080; border-radius: 10px; padding: 8px 10px; margin-bottom: 8px;
+  display: flex; gap: 10px; align-items: center; cursor: pointer; transition: all 0.2s;
+}
+.veh-on-field:hover { border-color: var(--accent2); transform: translateY(-2px); }
+.veh-on-field img { width: 64px; height: 40px; object-fit: contain; }
+.veh-on-field .v-tag { font-size: 0.58rem; color: var(--accent2); font-weight: 700; letter-spacing: 1px; }
+.bf-empty { text-align: center; color: var(--muted); padding: 28px 10px; font-size: 0.8rem; }
+.bf-empty .hint { font-size: 0.7rem; margin-top: 6px; opacity: 0.7; }
+
 </style>
 </head>
 <body>
@@ -476,7 +527,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="panel"><div class="tabs"><div class="tab active" data-tab="sectors">SECTORS</div><div class="tab" data-tab="command">COMMAND</div><div class="tab" data-tab="store">STORE</div><div class="tab" data-tab="build">BUILD</div></div><div class="panel-b" id="leftPanel"></div></div>
 <div class="center">
 <div class="mission-h"><div><div id="missionTitle" style="font-weight:700;font-size:.9rem">Command Centre Online</div><div id="missionSub" style="font-size:.65rem;color:var(--muted)">Select a sector to deploy</div></div><div id="missionPhase" style="font-size:.65rem;background:var(--panel2);padding:3px 8px;border-radius:10px;color:var(--accent)">OUTPOST</div></div>
-<div class="battlefield" id="battlefield"><div><div class="side-title">Your Forces</div><div id="playerSide"><div class="empty">Deploy a squad</div></div></div><div><div class="side-title">Hostiles — Vorrh</div><div id="enemySide"><div class="empty">No contacts</div></div></div></div>
+<div class="battlefield" id="battlefield"><div class="bf-col player-col"><div class="side-title">Your Forces <span class="count">0</span></div><div id="playerSide"><div class="bf-empty">Deploy a squad</div></div></div><div class="bf-col enemy-col"><div class="side-title">Hostiles, Vorrh <span class="count">0</span></div><div id="enemySide"><div class="bf-empty">No contacts</div></div></div></div>
 <div class="action-bar"><button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button><button class="btn" id="btnTravel" onclick="openTravel()">TRAVEL</button><button class="btn" id="btnMine" onclick="openMine()">MINE</button><button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button><button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button><button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button></div>
 </div>
 <div class="panel"><div class="tabs"><div class="tab active" data-tab="squad">SQUAD</div><div class="tab" data-tab="vehicles">VEHICLES</div><div class="tab" data-tab="tx">COMMS</div></div><div class="panel-b" id="rightPanel"></div></div>
@@ -906,7 +957,14 @@ state.pool.forEach(u=>{const el=makeUnitCard(u);el.onclick=()=>openUnit(u.id,'po
 if(squad.length){const h=document.createElement('div');h.style.cssText='font-size:.65rem;color:var(--accent);margin:7px 0 3px';h.textContent=`DEPLOYED — ${(state.sectors.find(s=>s.id===state.currentSector)||{}).name||'SECTOR'}`;p.appendChild(h);
 squad.forEach(u=>{const el=makeUnitCard(u);el.onclick=()=>openUnit(u.id,'sector');p.appendChild(el);});}
 }else if(tab==='vehicles'){p.innerHTML='';if(!state.vehicles.length){p.innerHTML='<div class="empty">No vehicles</div>';VEHICLES.slice(0,2).forEach(v=>{const el=document.createElement('div');el.className='veh-card';el.innerHTML=`<img src="${v.img}"><div><strong style="font-size:.75rem">${v.name}</strong><div style="font-size:.6rem;color:var(--muted)">${v.cost}⚙️</div></div>`;el.onclick=()=>showVehicleDetail(v);p.appendChild(el);});}
-else{state.vehicles.forEach(v=>{const el=document.createElement('div');el.className='veh-card'+(v.deployed?' deployed':'');el.innerHTML=`<img src="${v.img}"><div><strong style="font-size:.75rem">${v.name}</strong><div style="font-size:.6rem;color:var(--muted)">${v.deployed?'DEPLOYED':'Available'}</div></div>`;el.onclick=()=>{v.deployed=!v.deployed;toast(v.deployed?v.name+' deployed':v.name+' recalled','ok');renderRight('vehicles');};p.appendChild(el);});}
+else{state.vehicles.forEach((v,vi)=>{
+  const el=document.createElement('div');
+  el.className='veh-card'+(v.deployed?' deployed':'');
+  const secName = v.deployed && v.sector ? ((state.sectors.find(s=>s.id===v.sector)||{}).name||v.sector) : 'Available';
+  el.innerHTML='<img src="'+v.img+'"><div><strong style="font-size:.75rem">'+v.name+'</strong><div style="font-size:.6rem;color:var(--muted)">'+(v.deployed?('At '+secName):'Available')+'</div></div>';
+  el.onclick=()=>openVehicleDeploy(v);
+  p.appendChild(el);
+});}
 }else if(tab==='tx'){p.innerHTML='';if(!state.transmissions.length)p.innerHTML='<div class="empty">No transmissions</div>';
 state.transmissions.slice().reverse().forEach(t=>{const el=document.createElement('div');el.className='tx-item '+(t.type||'');el.innerHTML=`<div class="tx-time">${t.from} — ${t.time}</div>${t.msg}`;p.appendChild(el);});}
 }
@@ -914,19 +972,101 @@ function makeUnitCard(u){const el=document.createElement('div');el.className='un
 if(u.hp<0)u.hp=0;if(u.san<0)u.san=0;const hp=Math.max(0,(u.hp/u.maxHp)*100);const san=Math.max(0,(u.san/u.maxSan)*100);
 el.innerHTML=`<img src="${u.img}"><div style="flex:1;min-width:0"><div class="unit-name">${u.name}</div><div class="unit-role">${u.rank} • ${u.role}</div><div class="bar"><div class="bar-fill hp-fill" style="width:${hp}%"></div></div><div class="bar"><div class="bar-fill san-fill" style="width:${san}%"></div></div></div>`;return el;}
 function renderBattlefield(){
-const ps=document.getElementById('playerSide'),es=document.getElementById('enemySide');ps.innerHTML='';es.innerHTML='';
-if(state.phase!=='combat'){ps.innerHTML='<div class="empty">Deploy a squad</div>';es.innerHTML='<div class="empty">No contacts</div>';return;}
-const squad=getCurrentSquad();
-squad.filter(u=>u.hp>0).forEach(u=>{const el=document.createElement('div');el.className='combat-card'+(state.selectedUnit===u.id?' selected':'')+(u.acted?' acted':'');
-const hp=Math.max(0,(u.hp/u.maxHp)*100);
-el.innerHTML=`<img src="${u.img}"><div><div style="font-weight:700;font-size:.75rem">${u.name}</div><div class="bar" style="width:65px"><div class="bar-fill hp-fill" style="width:${hp}%"></div></div></div>`;
-el.onclick=()=>{if(u.acted){toast(u.name+' already acted','warn');return;}state.selectedUnit=u.id;renderBattlefield();toast(u.name+' selected','ok');};ps.appendChild(el);});
-if(!state.enemies.length)es.innerHTML='<div class="empty">Sector clear</div>';
-else state.enemies.forEach((e,i)=>{const el=document.createElement('div');el.className='combat-card enemy'+(e.hp<=0?' dead':'');
-const hp=Math.max(0,(e.hp/e.maxHp)*100);
-el.innerHTML=`<img src="${e.img}"><div><div style="font-weight:700;font-size:.75rem">${e.name}</div><div class="bar" style="width:65px"><div class="bar-fill" style="width:${hp}%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div></div>`;
-el.onclick=()=>{if(e.hp<=0)return;if(!state.selectedUnit){showEnemyDetail(e);return;}performAttack(state.selectedUnit,i);};es.appendChild(el);});
+  const ps = document.getElementById('playerSide');
+  const es = document.getElementById('enemySide');
+  if(!ps || !es) return;
+  ps.innerHTML = '';
+  es.innerHTML = '';
+
+  // Wrap columns if needed - structure is playerSide/enemySide inside battlefield
+  const sector = state.sectors.find(s=>s.id===state.currentSector);
+  const sectorName = sector ? sector.name : 'Unknown';
+
+  if(state.phase !== 'combat'){
+    // Show outpost overview for current sector
+    const squad = getCurrentSquad();
+    const vehs = (state.vehicles||[]).filter(v=>v.deployed && v.sector===state.currentSector);
+    ps.parentElement.querySelector('.side-title') && (ps.previousElementSibling);
+    // Update titles via parent structure
+    const titles = document.querySelectorAll('.side-title');
+    if(titles[0]) titles[0].innerHTML = 'Your Forces <span class="count">'+(squad.filter(u=>u.hp>0).length)+'</span>';
+    if(titles[1]) titles[1].innerHTML = 'Sector Status <span class="count">'+(sector?sector.status:'—')+'</span>';
+
+    if(!squad.length && !vehs.length){
+      ps.innerHTML = '<div class="bf-empty">No forces in this sector<div class="hint">Deploy a squad or vehicle to begin</div></div>';
+    } else {
+      vehs.forEach(v=>{
+        const el = document.createElement('div');
+        el.className = 'veh-on-field';
+        el.innerHTML = '<img src="'+v.img+'"><div><div class="v-tag">VEHICLE</div><div class="c-name">'+v.name+'</div><div class="c-meta">'+(v.type||'armor')+' · On station</div></div>';
+        el.onclick = ()=>showDetail(v.name, '<img src="'+v.img+'" style="width:140px;height:90px;object-fit:contain;background:#0a0c12;border-radius:6px;margin-bottom:8px"><div style="font-size:0.85rem;color:var(--muted)">Type: '+(v.type||'unknown')+'</div><div style="margin-top:6px;font-size:0.8rem">Deployed to '+(sectorName)+'</div>', [
+          {text:'Recall to Pool', action:()=>{ v.deployed=false; v.sector=null; closeDetail(); toast(v.name+' recalled','ok'); renderAll(); saveGame(); }},
+          {text:'Close', action:closeDetail}
+        ]);
+        ps.appendChild(el);
+      });
+      squad.forEach(u=>{
+        const el = document.createElement('div');
+        el.className = 'combat-card' + (u.hp<=0?' dead':'');
+        const hp = Math.max(0,(u.hp/(u.maxHp||100))*100);
+        el.innerHTML = '<img src="'+u.img+'"><div class="c-info"><div class="c-name">'+u.name+'</div><div class="c-meta">'+u.rank+' · '+u.role+(u.hp<=0?' · KIA':'')+'</div><div class="bar"><div class="bar-fill hp-fill" style="width:'+hp+'%"></div></div></div>';
+        el.onclick = ()=>openUnit(u.id,'sector');
+        ps.appendChild(el);
+      });
+    }
+    es.innerHTML = '<div class="bf-empty">'+(sector?sector.desc:'Select a sector')+'<div class="hint">Threat level T'+(sector?sector.threat:'—')+'</div></div>';
+    return;
+  }
+
+  // Combat mode
+  const titles = document.querySelectorAll('.side-title');
+  const squad = getCurrentSquad();
+  const living = squad.filter(u=>u.hp>0);
+  const livingE = state.enemies.filter(e=>e.hp>0);
+  if(titles[0]) titles[0].innerHTML = 'Your Forces <span class="count">'+living.length+'</span>';
+  if(titles[1]) titles[1].innerHTML = 'Hostiles, Vorrh <span class="count">'+livingE.length+'</span>';
+
+  // Vehicles supporting this sector in combat
+  const vehs = (state.vehicles||[]).filter(v=>v.deployed && v.sector===state.currentSector);
+  vehs.forEach(v=>{
+    const el = document.createElement('div');
+    el.className = 'veh-on-field';
+    el.innerHTML = '<img src="'+v.img+'"><div><div class="v-tag">SUPPORT</div><div class="c-name">'+v.name+'</div><div class="c-meta">Providing cover fire</div></div>';
+    el.onclick = ()=>toast(v.name+' is providing fire support this engagement','ok');
+    ps.appendChild(el);
+  });
+
+  living.forEach(u=>{
+    const el = document.createElement('div');
+    el.className = 'combat-card'+(state.selectedUnit===u.id?' selected':'')+(u.acted?' acted':'');
+    const hp = Math.max(0,(u.hp/(u.maxHp||100))*100);
+    el.innerHTML = '<img src="'+u.img+'"><div class="c-info"><div class="c-name">'+u.name+'</div><div class="c-meta">'+u.rank+' · '+(u.acted?'Acted':'Ready')+'</div><div class="bar"><div class="bar-fill hp-fill" style="width:'+hp+'%"></div></div></div>';
+    el.onclick = ()=>{
+      if(u.acted){ toast(u.name+' already acted','warn'); return; }
+      state.selectedUnit = u.id;
+      renderBattlefield();
+      toast(u.name+' selected, click an enemy','ok');
+    };
+    ps.appendChild(el);
+  });
+  if(!living.length && !vehs.length) ps.innerHTML = '<div class="bf-empty">No living forces</div>';
+
+  if(!state.enemies.length) es.innerHTML = '<div class="bf-empty">Sector clear</div>';
+  else state.enemies.forEach((e,i)=>{
+    const el = document.createElement('div');
+    el.className = 'combat-card enemy'+(e.hp<=0?' dead':'');
+    const hp = Math.max(0,(e.hp/(e.maxHp||1))*100);
+    el.innerHTML = '<img src="'+e.img+'"><div class="c-info"><div class="c-name">'+e.name+'</div><div class="c-meta">DMG '+(e.dmg||'?')+' · HP '+e.hp+'</div><div class="bar"><div class="bar-fill" style="width:'+hp+'%;background:linear-gradient(90deg,#ff3b5c,#ff6b81)"></div></div></div>';
+    el.onclick = ()=>{
+      if(e.hp<=0) return;
+      if(!state.selectedUnit){ showEnemyDetail(e); return; }
+      performAttack(state.selectedUnit, i);
+    };
+    es.appendChild(el);
+  });
 }
+
+
 function selectSector(id){const s=state.sectors.find(x=>x.id===id);if(!s||!s.unlocked)return;state.currentSector=id;
 document.getElementById('missionTitle').textContent=s.name;document.getElementById('missionSub').textContent=s.desc+(state.sectorSquads[id]?.length?` • ${state.sectorSquads[id].length} deployed`:'');
 if(state.phase==='combat'){state.phase='outpost';state.enemies=[];document.getElementById('missionPhase').textContent='OUTPOST';document.getElementById('btnDeploy').style.display='inline-block';document.getElementById('btnEndTurn').style.display='none';document.getElementById('btnRetreat').style.display='none';document.getElementById('btnExtract').style.display='none';}
@@ -1682,7 +1822,40 @@ state.scrap-=cost;state.weapons.push({...w,id:'w'+Date.now()});toast(`Purchased 
 function buyMark3(){if(state.scrap<MARK3.cost){toast('Need 85 Scrap','warn');return;}state.scrap-=MARK3.cost;
 state.pool.push({id:'m3_'+Date.now(),name:MARK3.name,rank:MARK3.rank,role:MARK3.role,img:MARK3.img,hp:MARK3.hp,maxHp:MARK3.hp,san:MARK3.san,maxSan:MARK3.san,weapon:null,status:'stable',acted:false,sector:null,upgrades:[]});
 toast('Mark-3 Heavy acquired','ok');updateRes();renderLeft('store');renderRight('squad');}
-function buyVehicle(v){if(state.scrap<v.cost){toast('Not enough Scrap','warn');return;}state.scrap-=v.cost;state.vehicles.push({...v,deployed:false});toast(`Acquired ${v.name}`,'ok');updateRes();renderRight('vehicles');}
+
+function openVehicleDeploy(v){
+  if(v.deployed){
+    showDetail(v.name, `
+      <img src="${v.img}" style="width:140px;height:90px;object-fit:contain;background:#0a0c12;border-radius:6px;margin-bottom:8px">
+      <div style="font-size:0.85rem;margin-bottom:6px">Currently deployed to <strong>${(state.sectors.find(s=>s.id===v.sector)||{}).name||'unknown'}</strong></div>
+      <div style="font-size:0.8rem;color:var(--muted)">Type: ${v.type||'vehicle'}</div>
+    `, [
+      {text:'Recall to Pool', action:()=>{ v.deployed=false; v.sector=null; closeDetail(); toast(v.name+' recalled','ok'); renderAll(); saveGame(); }},
+      {text:'Close', action:closeDetail}
+    ]);
+    return;
+  }
+  const unlocked = state.sectors.filter(s=>s.unlocked);
+  let body = '<img src="'+v.img+'" style="width:140px;height:90px;object-fit:contain;background:#0a0c12;border-radius:6px;margin-bottom:10px;display:block">';
+  body += '<div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px">Select a sector to deploy this vehicle. It will support squads fighting there.</div>';
+  unlocked.forEach(s=>{
+    const hasSquad = (state.sectorSquads[s.id]||[]).filter(u=>u.hp>0).length;
+    body += '<button class="btn" style="width:100%;margin-top:5px;text-align:left" onclick="deployVehicleTo(\''+v.id+'\',\''+s.id+'\')">'+s.name+(hasSquad?' · '+hasSquad+' infantry':'')+'</button>';
+  });
+  showDetail('Deploy '+v.name, body, [{text:'Cancel', action:closeDetail}]);
+}
+function deployVehicleTo(vid, sid){
+  const v = (state.vehicles||[]).find(x=>x.id===vid);
+  if(!v){ toast('Vehicle not found','warn'); return; }
+  v.deployed = true;
+  v.sector = sid;
+  closeDetail();
+  toast(v.name+' deployed to '+((state.sectors.find(s=>s.id===sid)||{}).name||sid),'ok');
+  renderAll();
+  saveGame();
+}
+
+function buyVehicle(v){if(state.scrap<v.cost){toast('Not enough Scrap','warn');return;}state.scrap-=v.cost;state.vehicles.push({...v, id: v.id+'_'+Date.now(), deployed:false, sector:null});toast(`Acquired ${v.name}`,'ok');updateRes();renderRight('vehicles');}
 function addTx(from,msg,type='',showRadio=false){
   const now=new Date();
   const time=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
