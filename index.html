@@ -1499,9 +1499,95 @@ function enemyTurn(){
   // Legacy mass AI disabled. Combat damage is handled inside poke battle only.
 }
 
-function endTurn(){if(state.phase!=='combat')return;getCurrentSquad().forEach(u=>u.acted=false);
-state.enemies.filter(e=>e.hp>0).forEach(()=>{if(Math.random()<.65)enemyTurn();});state.turn++;state.retreatedThisTurn=false;
-state.sanity=Math.max(0,state.sanity-2);updateRes();renderBattlefield();renderRight('squad');toast('New turn — units ready','ok');}
+function endTurn(){
+  if(state.phase!=='combat') return;
+
+  const livingE = state.enemies.filter(e=>e.hp>0);
+  const livingU = getCurrentSquad().filter(u=>u.hp>0);
+  const events = [];
+
+  if(!livingE.length){
+    events.push({type:'ok', text:'No hostiles remaining. Sector is quiet.'});
+  } else if(!livingU.length){
+    events.push({type:'danger', text:'No living units to defend. Sector lost.'});
+  } else {
+    // Each living enemy may act
+    livingE.forEach(enemy=>{
+      if(Math.random() > 0.75){
+        events.push({type:'warn', text: enemy.name + ' holds position, watching.', img: enemy.img});
+        return;
+      }
+      const targets = getCurrentSquad().filter(u=>u.hp>0);
+      if(!targets.length) return;
+      const tgt = targets[Math.floor(Math.random()*targets.length)];
+      // Modest damage 5-12
+      let dmg = 5 + Math.floor(Math.random()*8);
+      if(enemy.dmg && enemy.dmg > 15) dmg += 2;
+      const prev = tgt.hp;
+      tgt.hp = Math.max(0, Number(tgt.hp) - dmg);
+      const sanHit = Math.floor((enemy.sanDmg||4) * 0.5);
+      state.sanity = Math.max(0, state.sanity - sanHit);
+
+      if(tgt.hp <= 0){
+        tgt.hp = 0;
+        events.push({
+          type:'danger',
+          text: enemy.name + ' strikes ' + tgt.name + ' for ' + dmg + ' damage. ' + tgt.name + ' is down!',
+          img: enemy.img,
+          victim: tgt.img
+        });
+      } else {
+        events.push({
+          type:'warn',
+          text: enemy.name + ' hits ' + tgt.name + ' for ' + dmg + ' damage. (' + prev + ' to ' + tgt.hp + ' HP)',
+          img: enemy.img
+        });
+      }
+    });
+  }
+
+  // Ambient pressure
+  state.sanity = Math.max(0, state.sanity - 2);
+  events.push({type:'ok', text: 'Command sanity strain. (-2)'});
+
+  // Reset player acted flags for next turn
+  getCurrentSquad().forEach(u=>u.acted=false);
+  state.turn++;
+  state.retreatedThisTurn=false;
+
+  // Build modal
+  let body = '<div style="text-align:left;max-height:50vh;overflow-y:auto">';
+  events.forEach(ev=>{
+    const color = ev.type==='danger' ? 'var(--danger)' : ev.type==='warn' ? 'var(--warn)' : 'var(--accent)';
+    body += '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;padding:8px;background:var(--panel2);border-radius:8px;border-left:3px solid '+color+'">';
+    if(ev.img) body += '<img src="'+ev.img+'" style="width:40px;height:40px;object-fit:contain;border-radius:4px;background:#0a0c12;flex-shrink:0">';
+    body += '<div style="font-size:0.82rem;line-height:1.4;color:var(--text)">'+ev.text+'</div>';
+    if(ev.victim) body += '<img src="'+ev.victim+'" style="width:36px;height:36px;object-fit:contain;filter:grayscale(1);opacity:0.5;border-radius:4px;flex-shrink:0">';
+    body += '</div>';
+  });
+  body += '</div>';
+
+  const wiped = getCurrentSquad().filter(u=>u.hp>0).length === 0 && getCurrentSquad().length > 0;
+
+  showDetail('ENEMY PHASE — TURN ' + state.turn, body, [{
+    text: wiped ? 'Continue' : 'Begin Next Turn',
+    action: ()=>{
+      closeDetail();
+      if(wiped){
+        playSquadWipe(getCurrentSquad(), 'Vorrh forces');
+      } else if(state.enemies.every(e=>e.hp<=0)){
+        endCombat(true);
+      } else {
+        updateRes();
+        renderBattlefield();
+        renderRight('squad');
+        toast('Your turn','ok');
+        saveGame();
+      }
+    }
+  }]);
+}
+
 
 function playSquadWipe(squad, killer){
   const names = (squad||[]).map(u=>u.name).join(', ');
