@@ -385,6 +385,75 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   .cine-left img{width:80px;height:80px;margin-bottom:0}
 }
 
+
+/* Attack VFX */
+.fx-flash {
+  position: absolute; inset: 0; pointer-events: none; z-index: 20;
+  background: radial-gradient(circle at 30% 50%, rgba(0,229,160,0.45) 0%, transparent 55%);
+  animation: fxFlash 0.35s ease-out forwards;
+}
+.fx-flash.enemy {
+  background: radial-gradient(circle at 70% 50%, rgba(255,59,92,0.5) 0%, transparent 55%);
+}
+@keyframes fxFlash {
+  0%{opacity:1} 100%{opacity:0}
+}
+.fx-shake {
+  animation: fxShake 0.4s ease-in-out !important;
+}
+@keyframes fxShake {
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.fx-impact {
+  position: absolute; width: 60px; height: 60px; border-radius: 50%;
+  border: 3px solid #ff3b5c; pointer-events: none; z-index: 15;
+  animation: fxImpact 0.5s ease-out forwards;
+  box-shadow: 0 0 20px #ff3b5c, inset 0 0 15px rgba(255,59,92,0.4);
+}
+@keyframes fxImpact {
+  0%{transform:scale(0.3);opacity:1}
+  100%{transform:scale(2.2);opacity:0}
+}
+.fx-muzzle {
+  position: absolute; width: 40px; height: 40px; border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #00e5a0 40%, transparent 70%);
+  pointer-events: none; z-index: 15;
+  animation: fxMuzzle 0.3s ease-out forwards;
+  box-shadow: 0 0 25px #00e5a0;
+}
+@keyframes fxMuzzle {
+  0%{transform:scale(0.5);opacity:1}
+  100%{transform:scale(1.8);opacity:0}
+}
+.fx-slash {
+  position: absolute; width: 80px; height: 4px;
+  background: linear-gradient(90deg, transparent, #fff, #ff3b5c, transparent);
+  pointer-events: none; z-index: 15;
+  animation: fxSlash 0.35s ease-out forwards;
+  box-shadow: 0 0 10px #ff3b5c;
+}
+@keyframes fxSlash {
+  0%{transform:scaleX(0.2) rotate(-20deg);opacity:1}
+  100%{transform:scaleX(1.5) rotate(-20deg);opacity:0}
+}
+.poke-field { position: relative; overflow: hidden; }
+.poke-sprite.recoil { animation: pokeRecoil 0.35s ease !important; }
+@keyframes pokeRecoil {
+  0%{transform:translateX(0)}
+  30%{transform:translateX(18px) scale(1.05)}
+  100%{transform:translateX(0)}
+}
+.poke-sprite.enemy-recoil { animation: pokeEnemyRecoil 0.35s ease !important; }
+@keyframes pokeEnemyRecoil {
+  0%{transform:translateX(0)}
+  30%{transform:translateX(-18px) scale(1.05)}
+  100%{transform:translateX(0)}
+}
+
 </style>
 </head>
 <body>
@@ -1072,6 +1141,58 @@ function showEnemyDetail(e){
   `, [{text:'Close', action:closeDetail}]);
 }
 
+
+function spawnFx(type, anchorEl){
+  const field = document.querySelector('.poke-field');
+  if(!field || !anchorEl) return;
+  const fieldRect = field.getBoundingClientRect();
+  const r = anchorEl.getBoundingClientRect();
+  const x = r.left - fieldRect.left + r.width/2;
+  const y = r.top - fieldRect.top + r.height/2;
+
+  if(type === 'muzzle'){
+    const el = document.createElement('div');
+    el.className = 'fx-muzzle';
+    el.style.left = (x - 20) + 'px';
+    el.style.top = (y - 20) + 'px';
+    field.appendChild(el);
+    setTimeout(()=>el.remove(), 350);
+  }
+  if(type === 'impact'){
+    const el = document.createElement('div');
+    el.className = 'fx-impact';
+    el.style.left = (x - 30) + 'px';
+    el.style.top = (y - 30) + 'px';
+    field.appendChild(el);
+    setTimeout(()=>el.remove(), 550);
+  }
+  if(type === 'slash'){
+    const el = document.createElement('div');
+    el.className = 'fx-slash';
+    el.style.left = (x - 40) + 'px';
+    el.style.top = (y) + 'px';
+    field.appendChild(el);
+    setTimeout(()=>el.remove(), 400);
+  }
+  if(type === 'flash-player'){
+    const el = document.createElement('div');
+    el.className = 'fx-flash';
+    field.appendChild(el);
+    setTimeout(()=>el.remove(), 400);
+  }
+  if(type === 'flash-enemy'){
+    const el = document.createElement('div');
+    el.className = 'fx-flash enemy';
+    field.appendChild(el);
+    setTimeout(()=>el.remove(), 400);
+  }
+  if(type === 'shake'){
+    field.classList.add('fx-shake');
+    setTimeout(()=>field.classList.remove('fx-shake'), 450);
+  }
+}
+
+
 function performAttack(unitId, enemyIdx){
   const squad = getCurrentSquad();
   const unit = squad.find(u => u.id === unitId);
@@ -1187,14 +1308,19 @@ function executePokeMove(move){
 
   const dmg = Math.max(1, move.dmg + Math.floor(Math.random()*6) - 2);
   log.textContent = unit.name + ' used ' + move.name + '!';
-  playerSprite.classList.add('attack');
+  playerSprite.classList.add('attack', 'recoil');
+  spawnFx('muzzle', playerSprite);
+  spawnFx('flash-player', playerSprite);
   if(move.fortify) battleState.fortified = true;
   if(move.smoke) battleState.smoke = true;
 
 
   setTimeout(() => {
-    playerSprite.classList.remove('attack');
+    playerSprite.classList.remove('attack', 'recoil');
     enemySprite.classList.add('hurt');
+    spawnFx('impact', enemySprite);
+    spawnFx('slash', enemySprite);
+    spawnFx('shake', enemySprite);
     enemy.hp = Math.max(0, enemy.hp - dmg);
     const hpEl = document.getElementById('pokeEnemyHp');
     if(hpEl) hpEl.style.width = Math.max(0, enemy.hp/enemy.maxHp*100) + '%';
@@ -1250,12 +1376,17 @@ function enemyPokeTurn(){
 
   const attacks = ['lunges', 'strikes', 'screeches and lashes', 'surges forward'];
   if(log) log.textContent = enemy.name + ' ' + attacks[Math.floor(Math.random()*attacks.length)] + '!';
-  if(enemySprite) enemySprite.classList.add('enemy-attack');
+  if(enemySprite) enemySprite.classList.add('enemy-attack', 'enemy-recoil');
+  spawnFx('flash-enemy', enemySprite);
+  spawnFx('muzzle', enemySprite);
 
   setTimeout(() => {
     // Stale battle guard
     if(!battleState || battleState.gen !== myGen) return;
-    if(enemySprite) enemySprite.classList.remove('enemy-attack');
+    if(enemySprite) enemySprite.classList.remove('enemy-attack', 'enemy-recoil');
+    spawnFx('impact', playerSprite);
+    spawnFx('slash', playerSprite);
+    spawnFx('shake', playerSprite);
     if(playerSprite) playerSprite.classList.add('hurt');
 
     const prevHp = Number(unit.hp);
