@@ -508,8 +508,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 
 
 /* ===== SYSTEM MAP ===== */
-#systemScreen { display:none; flex-direction:column; min-height:100vh; background:#02040a; }
-#systemScreen.active { display:flex; }
+#systemScreen { display:none !important; flex-direction:column; min-height:100vh; background:#02040a; }
+#systemScreen.active { display:flex !important; }
 .sys-top {
   padding:10px 16px; background:var(--panel); border-bottom:1px solid var(--border);
   display:flex; align-items:center; gap:12px; flex-wrap:wrap; z-index:10;
@@ -586,7 +586,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 <div class="center">
 <div class="mission-h"><div><div id="missionTitle" style="font-weight:700;font-size:.9rem">Command Centre Online</div><div id="missionSub" style="font-size:.65rem;color:var(--muted)">Select a sector to deploy</div></div><div id="missionPhase" style="font-size:.65rem;background:var(--panel2);padding:3px 8px;border-radius:10px;color:var(--accent)">OUTPOST</div></div>
 <div class="battlefield" id="battlefield"><div class="bf-col player-col"><div class="side-title">Your Forces <span class="count">0</span></div><div id="playerSide"><div class="bf-empty">Deploy a squad</div></div></div><div class="bf-col enemy-col"><div class="side-title">Hostiles, Vorrh <span class="count">0</span></div><div id="enemySide"><div class="bf-empty">No contacts</div></div></div></div>
-<div class="action-bar"><button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button><button class="btn" id="btnTravel" onclick="openTravel()">TRAVEL</button><button class="btn primary" id="btnSystem" onclick="openSystemMap()">SYSTEM</button><button class="btn" id="btnMine" onclick="openMine()">MINE</button><button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button><button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button><button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button></div>
+<div class="action-bar"><button class="btn primary" id="btnDeploy" onclick="tryDeploy()">DEPLOY SQUAD</button><button class="btn" id="btnTravel" onclick="openTravel()">TRAVEL</button><button class="btn primary" id="btnSystem" onclick="openSystemMap()" style="font-weight:800;letter-spacing:1px">◎ SYSTEM MAP</button><button class="btn" id="btnMine" onclick="openMine()">MINE</button><button class="btn" id="btnEndTurn" onclick="endTurn()" style="display:none">END TURN</button><button class="btn danger" id="btnRetreat" onclick="retreat()" style="display:none">RETREAT</button><button class="btn" id="btnExtract" onclick="callTransport()" style="display:none">CALL TRANSPORT</button></div>
 </div>
 <div class="panel"><div class="tabs"><div class="tab active" data-tab="squad">SQUAD</div><div class="tab" data-tab="vehicles">VEHICLES</div><div class="tab" data-tab="tx">COMMS</div></div><div class="panel-b" id="rightPanel"></div></div>
 </div></div>
@@ -2801,35 +2801,31 @@ document.addEventListener('DOMContentLoaded', bindUiSounds);
 if(document.readyState !== 'loading') bindUiSounds();
 
 
-// ===== 3D SYSTEM MAP =====
+
+// ===== 3D SYSTEM MAP (high-detail space view) =====
 const SYS_PLANETS = [
-  { key:'star', name:'Primary Star', sector:null, r:2.8, d:0, color:0xffcc44, emissive:0xffaa22 },
-  { key:'alpha', name:'Alpha Ridge', sector:'alpha', r:0.7, d:9, color:0x3b82f6 },
-  { key:'bravo', name:'Bravo Basin', sector:'bravo', r:0.85, d:13, color:0x22c55e },
-  { key:'charlie', name:'Charlie Spire', sector:'charlie', r:0.65, d:17, color:0xa78bfa },
-  { key:'delta', name:'Delta Ruins', sector:'delta', r:0.75, d:21, color:0xf59e0b },
-  { key:'echo', name:'Echo Depths', sector:'echo', r:0.9, d:26, color:0x06b6d4 },
-  { key:'foxtrot', name:'Foxtrot Gate', sector:'foxtrot', r:1.0, d:31, color:0xef4444 }
+  { key:'star', name:'Primary Star', sector:null, r:3.4, d:0, color:0xffcc33, emissive:0xffaa22 },
+  { key:'alpha', name:'Alpha Ridge', sector:'alpha', r:0.75, d:11, color:0x3b82f6 },
+  { key:'bravo', name:'Bravo Basin', sector:'bravo', r:0.95, d:16, color:0x22c55e },
+  { key:'charlie', name:'Charlie Spire', sector:'charlie', r:0.7, d:21, color:0xa78bfa },
+  { key:'delta', name:'Delta Ruins', sector:'delta', r:0.8, d:26, color:0xf59e0b },
+  { key:'echo', name:'Echo Depths', sector:'echo', r:1.0, d:32, color:0x06b6d4 },
+  { key:'foxtrot', name:'Foxtrot Gate', sector:'foxtrot', r:1.15, d:38, color:0xef4444 }
 ];
 
 let sysScene, sysCam, sysRenderer, sysBodies = {}, sysAnimId = null;
-let sysDragging = false, sysPrevX = 0, sysPrevY = 0;
-let sysPhi = 1.1, sysTheta = 0.4, sysDist = 48, sysTargetDist = 48;
+let sysDragging = false, sysPrevX = 0, sysPrevY = 0, sysMoved = false;
+let sysPhi = 1.05, sysTheta = 0.9, sysDist = 55, sysTargetDist = 55;
 let sysFocus = null, sysSelected = null;
 let sysRay = null, sysMouse = null;
-let sysClock = null;
+let sysSunMesh = null, sysSunGlow = null;
 
-function openSystemMap(){
-  document.getElementById('game').classList.remove('active');
-  document.getElementById('systemScreen').classList.add('active');
-  setTimeout(()=>{ initSystemMap(); renderSysPlanetList(); }, 50);
-}
-
-function closeSystemMap(){
-  document.getElementById('systemScreen').classList.remove('active');
-  document.getElementById('game').classList.add('active');
-  if(sysAnimId){ cancelAnimationFrame(sysAnimId); sysAnimId = null; }
-  renderAll();
+function ownershipLabel(own){
+  if(own==='player') return 'YOU CONTROL';
+  if(own==='enemy') return 'VORRH HELD';
+  if(own==='locked') return 'LOCKED';
+  if(own==='star') return '';
+  return 'UNCLAIMED';
 }
 
 function getPlanetOwnership(sectorId){
@@ -2838,7 +2834,6 @@ function getPlanetOwnership(sectorId){
   if(!s || !s.unlocked) return 'locked';
   if(s.status==='secured') return 'player';
   if(s.status==='hot') return 'enemy';
-  // Has living player squad?
   const sq = (state.sectorSquads[sectorId]||[]).filter(u=>u.hp>0);
   if(sq.length) return 'player';
   return 'contested';
@@ -2852,114 +2847,196 @@ function ownershipColor(own){
   return 0x8888aa;
 }
 
+function makeLabelSprite(title, subtitle, colorHex){
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,256,64);
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.beginPath();
+  if(ctx.roundRect) ctx.roundRect(4,4,248,56,8); else ctx.rect(4,4,248,56);
+  ctx.fill();
+  ctx.font = 'bold 18px sans-serif';
+  ctx.fillStyle = '#e8edf5';
+  ctx.textAlign = 'center';
+  ctx.fillText(title, 128, 26);
+  ctx.font = 'bold 14px sans-serif';
+  ctx.fillStyle = colorHex;
+  ctx.fillText(subtitle, 128, 48);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.needsUpdate = true;
+  const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+  const spr = new THREE.Sprite(mat);
+  spr.scale.set(4.5, 1.15, 1);
+  return spr;
+}
+
+function openSystemMap(){
+  const game = document.getElementById('game');
+  const sys = document.getElementById('systemScreen');
+  if(!sys){ toast('System map missing','danger'); return; }
+  if(game) game.classList.remove('active');
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  sys.classList.add('active');
+  sys.style.display = 'flex';
+  setTimeout(()=>{
+    try { initSystemMap(); } catch(err){ console.error(err); if(typeof initSystemMap2D==='function') initSystemMap2D(); }
+    renderSysPlanetList();
+  }, 80);
+}
+
+function closeSystemMap(){
+  const sys = document.getElementById('systemScreen');
+  if(sys){ sys.classList.remove('active'); sys.style.display = 'none'; }
+  const game = document.getElementById('game');
+  if(game){ game.classList.add('active'); game.style.display = ''; }
+  if(sysAnimId){ cancelAnimationFrame(sysAnimId); sysAnimId = null; }
+  renderAll();
+}
+
 function initSystemMap(){
   const wrap = document.getElementById('sysCanvasWrap');
   if(!wrap) return;
-  // Cleanup previous
   if(sysRenderer){
-    try { wrap.removeChild(sysRenderer.domElement); } catch(e){}
-    sysRenderer.dispose();
+    try { wrap.querySelectorAll('canvas').forEach(c=>c.remove()); } catch(e){}
+    try { sysRenderer.dispose(); } catch(e){}
   }
   if(typeof THREE === 'undefined'){
-    wrap.innerHTML = '<div style="padding:40px;text-align:center;color:#888">Three.js failed to load. Check your connection for the CDN.</div>';
+    if(typeof initSystemMap2D==='function') initSystemMap2D();
     return;
   }
 
-  const w = wrap.clientWidth || 800;
-  const h = wrap.clientHeight || 420;
+  const w = Math.max(wrap.clientWidth, 640);
+  const h = Math.max(wrap.clientHeight, 400);
 
   sysScene = new THREE.Scene();
-  sysScene.fog = new THREE.FogExp2(0x02040a, 0.012);
-  sysCam = new THREE.PerspectiveCamera(50, w/h, 0.1, 500);
-  sysRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:true });
-  sysRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  sysScene.background = new THREE.Color(0x010104);
+  sysScene.fog = new THREE.FogExp2(0x010104, 0.008);
+
+  sysCam = new THREE.PerspectiveCamera(48, w/h, 0.1, 2000);
+  sysRenderer = new THREE.WebGLRenderer({ antialias:true, alpha:false, powerPreference:'high-performance' });
+  sysRenderer.setPixelRatio(Math.min(window.devicePixelRatio||1, 2));
   sysRenderer.setSize(w, h);
   sysRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  sysRenderer.toneMappingExposure = 1.15;
   wrap.appendChild(sysRenderer.domElement);
 
-  // Keep hint on top
+  // Hint overlay
   let hint = wrap.querySelector('.sys-hint');
   if(!hint){
     hint = document.createElement('div');
     hint.className = 'sys-hint';
-    hint.textContent = 'Drag to rotate · Scroll to zoom · Click a world to select · Double-click to focus';
+    hint.textContent = 'Drag rotate · Scroll zoom · Click select · Double-click focus';
     wrap.appendChild(hint);
   }
 
-  sysScene.add(new THREE.AmbientLight(0x334455, 0.45));
-  const sunLight = new THREE.PointLight(0xfff0d0, 2.2, 120, 1.2);
+  // Lighting — match Humanity Expansion feel
+  sysScene.add(new THREE.AmbientLight(0x223344, 0.4));
+  const sunLight = new THREE.PointLight(0xfff0d0, 3.0, 450, 1.4);
   sunLight.position.set(0,0,0);
   sysScene.add(sunLight);
+  const fill = new THREE.DirectionalLight(0x6688aa, 0.25);
+  fill.position.set(20, 30, 10);
+  sysScene.add(fill);
 
-  // Stars background
+  // Dense starfield
   const starGeo = new THREE.BufferGeometry();
   const starPos = [];
-  for(let i=0;i<800;i++){
-    const r = 80 + Math.random()*100;
+  for(let i=0;i<1600;i++){
+    const r = 90 + Math.random()*180;
     const t = Math.random()*Math.PI*2;
     const p = Math.acos(2*Math.random()-1);
-    starPos.push(r*Math.sin(p)*Math.cos(t), r*Math.sin(p)*Math.sin(t)*0.5, r*Math.cos(p));
+    starPos.push(r*Math.sin(p)*Math.cos(t), r*Math.sin(p)*Math.sin(t)*0.55, r*Math.cos(p));
   }
   starGeo.setAttribute('position', new THREE.Float32BufferAttribute(starPos, 3));
-  sysScene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color:0xffffff, size:0.35, transparent:true, opacity:0.7 })));
+  sysScene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({
+    color: 0xffffff, size: 0.4, transparent: true, opacity: 0.85, sizeAttenuation: true
+  })));
 
   sysBodies = {};
-  SYS_PLANETS.forEach((p, i)=>{
+  SYS_PLANETS.forEach((p)=>{
     const own = getPlanetOwnership(p.sector);
-    const col = ownershipColor(own);
     const group = new THREE.Group();
 
-    // Planet sphere with slight emissive for ownership
-    const mat = new THREE.MeshStandardMaterial({
-      color: p.color,
-      emissive: own==='enemy' ? 0x330000 : own==='player' ? 0x002211 : 0x000000,
-      emissiveIntensity: own==='enemy'||own==='player' ? 0.25 : 0,
-      roughness: 0.65,
-      metalness: 0.15
-    });
-    if(p.key==='star'){
-      mat.emissive = new THREE.Color(0xffaa22);
-      mat.emissiveIntensity = 0.9;
-      mat.roughness = 0.4;
-    }
-    const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.r, 32, 32), mat);
-    group.add(mesh);
-
-    // Ownership ring
-    if(p.sector){
-      const ringCol = own==='player' ? 0x00e5a0 : own==='enemy' ? 0xff3b5c : own==='locked' ? 0x333355 : 0x8888aa;
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(p.r + 0.25, 0.04, 8, 48),
-        new THREE.MeshBasicMaterial({ color: ringCol, transparent:true, opacity:0.85 })
+    if(p.key === 'star'){
+      // Sun core
+      const sunMat = new THREE.MeshBasicMaterial({ color: 0xffcc33 });
+      sysSunMesh = new THREE.Mesh(new THREE.SphereGeometry(p.r, 48, 48), sunMat);
+      group.add(sysSunMesh);
+      // Glow shells
+      sysSunGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(p.r * 1.35, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffaa22, transparent: true, opacity: 0.35, side: THREE.BackSide })
       );
-      ring.rotation.x = Math.PI / 2.2;
+      group.add(sysSunGlow);
+      const outerGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(p.r * 1.8, 24, 24),
+        new THREE.MeshBasicMaterial({ color: 0xff8800, transparent: true, opacity: 0.12, side: THREE.BackSide })
+      );
+      group.add(outerGlow);
+    } else {
+      // Detailed planet
+      const mat = new THREE.MeshStandardMaterial({
+        color: p.color,
+        roughness: 0.55,
+        metalness: 0.2,
+        emissive: own==='enemy' ? 0x220000 : own==='player' ? 0x001a10 : 0x000000,
+        emissiveIntensity: (own==='enemy'||own==='player') ? 0.2 : 0
+      });
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(p.r, 48, 48), mat);
+      group.add(mesh);
+
+      // Atmosphere
+      group.add(new THREE.Mesh(
+        new THREE.SphereGeometry(p.r * 1.12, 32, 32),
+        new THREE.MeshBasicMaterial({ color: p.color, transparent: true, opacity: 0.14, side: THREE.BackSide })
+      ));
+
+      // Ownership ring
+      const ringCol = ownershipColor(own);
+      const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(p.r + 0.28, 0.035, 10, 64),
+        new THREE.MeshBasicMaterial({ color: ringCol, transparent: true, opacity: 0.9 })
+      );
+      ring.rotation.x = Math.PI / 2.15;
       group.add(ring);
       group.userData.ring = ring;
+
+      // Floating ownership label
+      const labelColor = own==='player' ? '#00e5a0' : own==='enemy' ? '#ff3b5c' : own==='locked' ? '#666688' : '#a0a8b8';
+      const spr = makeLabelSprite(p.name, ownershipLabel(own), labelColor);
+      spr.position.y = p.r + 1.4;
+      group.add(spr);
+      group.userData.label = spr;
+      group.userData.labelColor = labelColor;
     }
 
-    // Atmosphere glow
-    const glow = new THREE.Mesh(
-      new THREE.SphereGeometry(p.r * 1.15, 24, 24),
-      new THREE.MeshBasicMaterial({ color: p.color, transparent:true, opacity:0.12, side:THREE.BackSide })
-    );
-    group.add(glow);
-
-    // Orbit line
+    // Orbit path
     if(p.d > 0){
-      const orbPts = [];
-      for(let a=0;a<=64;a++){
-        const ang = (a/64)*Math.PI*2;
-        orbPts.push(new THREE.Vector3(Math.cos(ang)*p.d, 0, Math.sin(ang)*p.d));
+      const pts = [];
+      for(let a=0;a<=96;a++){
+        const ang = (a/96)*Math.PI*2;
+        pts.push(new THREE.Vector3(Math.cos(ang)*p.d, 0, Math.sin(ang)*p.d));
       }
-      const orbGeo = new THREE.BufferGeometry().setFromPoints(orbPts);
-      sysScene.add(new THREE.Line(orbGeo, new THREE.LineBasicMaterial({ color:0x1a2030, transparent:true, opacity:0.5 })));
+      const orb = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color: 0x1a1a2e, transparent: true, opacity: 0.55 })
+      );
+      sysScene.add(orb);
     }
 
-    group.position.set(p.d, 0, 0);
-    group.userData = { key:p.key, sector:p.sector, name:p.name, r:p.r, d:p.d, angle: Math.random()*Math.PI*2, speed: p.d? 0.0015/(p.d*0.08) : 0, spin: 0.004 + Math.random()*0.003 };
+    group.userData.key = p.key;
+    group.userData.sector = p.sector;
+    group.userData.name = p.name;
+    group.userData.r = p.r;
+    group.userData.d = p.d;
+    group.userData.angle = Math.random() * Math.PI * 2;
+    group.userData.speed = p.d ? 0.0022 / (p.d * 0.07) : 0;
+    group.userData.spin = 0.006 + Math.random() * 0.004;
+
     if(p.d > 0){
-      group.position.x = Math.cos(group.userData.angle)*p.d;
-      group.position.z = Math.sin(group.userData.angle)*p.d;
+      group.position.x = Math.cos(group.userData.angle) * p.d;
+      group.position.z = Math.sin(group.userData.angle) * p.d;
     }
     sysScene.add(group);
     sysBodies[p.key] = group;
@@ -2967,43 +3044,69 @@ function initSystemMap(){
 
   sysRay = new THREE.Raycaster();
   sysMouse = new THREE.Vector2();
-  sysClock = new THREE.Clock();
-  sysPhi = 1.1; sysTheta = 0.4; sysDist = 48; sysTargetDist = 48; sysFocus = null;
+  sysPhi = 1.05; sysTheta = 0.9; sysDist = 55; sysTargetDist = 55; sysFocus = null;
 
   const canvas = sysRenderer.domElement;
+  canvas.style.cursor = 'grab';
   canvas.onpointerdown = (e)=>{
-    sysDragging = true; sysPrevX = e.clientX; sysPrevY = e.clientY;
+    sysDragging = true; sysMoved = false;
+    sysPrevX = e.clientX; sysPrevY = e.clientY;
+    canvas.style.cursor = 'grabbing';
     canvas.setPointerCapture(e.pointerId);
   };
   canvas.onpointermove = (e)=>{
     if(!sysDragging) return;
     const dx = e.clientX - sysPrevX, dy = e.clientY - sysPrevY;
+    if(Math.abs(dx)+Math.abs(dy) > 3) sysMoved = true;
     sysPrevX = e.clientX; sysPrevY = e.clientY;
-    sysTheta -= dx * 0.008;
-    sysPhi = Math.max(0.2, Math.min(Math.PI-0.2, sysPhi + dy * 0.008));
+    sysTheta -= dx * 0.007;
+    sysPhi = Math.max(0.15, Math.min(Math.PI - 0.15, sysPhi + dy * 0.007));
   };
   canvas.onpointerup = (e)=>{
     sysDragging = false;
+    canvas.style.cursor = 'grab';
     try{ canvas.releasePointerCapture(e.pointerId); }catch(err){}
   };
   canvas.onwheel = (e)=>{
     e.preventDefault();
-    sysTargetDist = Math.max(12, Math.min(90, sysTargetDist + e.deltaY * 0.04));
+    sysTargetDist = Math.max(10, Math.min(120, sysTargetDist + e.deltaY * 0.045));
   };
   canvas.onclick = (e)=>{
+    if(sysMoved) return;
     const rect = canvas.getBoundingClientRect();
     sysMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     sysMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     sysRay.setFromCamera(sysMouse, sysCam);
-    const meshes = Object.values(sysBodies).map(g=>g.children[0]);
-    const hits = sysRay.intersectObjects(meshes);
+    const meshes = [];
+    Object.values(sysBodies).forEach(g=>{
+      if(g.children[0]) meshes.push(g.children[0]);
+    });
+    const hits = sysRay.intersectObjects(meshes, false);
     if(hits.length){
       const group = hits[0].object.parent;
       const ud = group.userData;
       sysSelected = ud.key;
       renderSysPlanetList();
       if(ud.sector){
-        toast(ud.name + ' selected','ok');
+        const s = state.sectors.find(x=>x.id===ud.sector);
+        const own = getPlanetOwnership(ud.sector);
+        const ownText = ownershipLabel(own);
+        if(s && s.unlocked){
+          showDetail(ud.name, `
+            <div style="font-size:0.9rem;margin-bottom:8px;color:${own==='player'?'var(--accent)':own==='enemy'?'var(--danger)':'var(--muted)'};font-weight:800">${ownText}</div>
+            <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px">${s.desc}</div>
+            <div class="building-stat-grid">
+              <div class="building-stat"><div class="label">STATUS</div>${s.status}</div>
+              <div class="building-stat"><div class="label">THREAT</div>T${s.threat}</div>
+              <div class="building-stat"><div class="label">CONTROL</div>${ownText}</div>
+              <div class="building-stat"><div class="label">FORCES</div>${(state.sectorSquads[ud.sector]||[]).filter(u=>u.hp>0).length}</div>
+            </div>
+          `, [
+            {text:'Open Sector / Deploy', action:()=>{ closeDetail(); closeSystemMap(); selectSector(ud.sector); }},
+            {text:'Focus Camera', action:()=>{ closeDetail(); sysFocus=ud.key; sysTargetDist=Math.max(10, ud.r*9+8); }},
+            {text:'Close', action:closeDetail}
+          ]);
+        } else toast(ud.name+' is locked','warn');
       }
     }
   };
@@ -3012,12 +3115,13 @@ function initSystemMap(){
     sysMouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
     sysMouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
     sysRay.setFromCamera(sysMouse, sysCam);
-    const meshes = Object.values(sysBodies).map(g=>g.children[0]);
-    const hits = sysRay.intersectObjects(meshes);
+    const meshes = Object.values(sysBodies).map(g=>g.children[0]).filter(Boolean);
+    const hits = sysRay.intersectObjects(meshes, false);
     if(hits.length){
-      sysFocus = hits[0].object.parent.userData.key;
-      sysTargetDist = Math.max(8, hits[0].object.parent.userData.r * 8 + 6);
-      toast('Focused: '+hits[0].object.parent.userData.name,'ok');
+      const ud = hits[0].object.parent.userData;
+      sysFocus = ud.key;
+      sysTargetDist = Math.max(10, ud.r * 9 + 8);
+      toast('Focused: '+ud.name,'ok');
     }
   };
 
@@ -3029,6 +3133,7 @@ function onSysResize(){
   const wrap = document.getElementById('sysCanvasWrap');
   if(!wrap || !sysRenderer || !sysCam) return;
   const w = wrap.clientWidth, h = wrap.clientHeight;
+  if(w < 10 || h < 10) return;
   sysCam.aspect = w/h;
   sysCam.updateProjectionMatrix();
   sysRenderer.setSize(w, h);
@@ -3037,27 +3142,30 @@ function onSysResize(){
 function animateSystemMap(){
   sysAnimId = requestAnimationFrame(animateSystemMap);
   if(!sysRenderer || !sysScene) return;
-  sysDist += (sysTargetDist - sysDist) * 0.08;
+  sysDist += (sysTargetDist - sysDist) * 0.06;
 
   Object.values(sysBodies).forEach(g=>{
     const ud = g.userData;
     if(ud.d > 0){
-      ud.angle += ud.speed;
+      ud.angle += ud.speed * (sysFocus ? 0.35 : 1);
       g.position.x = Math.cos(ud.angle) * ud.d;
       g.position.z = Math.sin(ud.angle) * ud.d;
     }
+    // Rotate planet mesh (first child)
     if(g.children[0]) g.children[0].rotation.y += ud.spin;
-    // Update ring color from live ownership
-    if(ud.sector && g.userData.ring){
+    // Sun glow counter-rotate
+    if(ud.key==='star' && g.children[1]) g.children[1].rotation.y -= 0.002;
+
+    // Live ownership ring + label update
+    if(ud.sector){
       const own = getPlanetOwnership(ud.sector);
-      g.userData.ring.material.color.setHex(ownershipColor(own));
+      if(ud.ring) ud.ring.material.color.setHex(ownershipColor(own));
     }
   });
 
   let lookAt = new THREE.Vector3(0,0,0);
-  if(sysFocus && sysBodies[sysFocus]){
-    lookAt = sysBodies[sysFocus].position.clone();
-  }
+  if(sysFocus && sysBodies[sysFocus]) lookAt = sysBodies[sysFocus].position.clone();
+
   sysCam.position.x = lookAt.x + sysDist * Math.sin(sysPhi) * Math.cos(sysTheta);
   sysCam.position.y = lookAt.y + sysDist * Math.cos(sysPhi);
   sysCam.position.z = lookAt.z + sysDist * Math.sin(sysPhi) * Math.sin(sysTheta);
@@ -3073,39 +3181,144 @@ function renderSysPlanetList(){
   SYS_PLANETS.filter(p=>p.sector).forEach(p=>{
     const s = state.sectors.find(x=>x.id===p.sector);
     const own = getPlanetOwnership(p.sector);
+    const ownText = ownershipLabel(own);
     const deployed = (state.sectorSquads[p.sector]||[]).filter(u=>u.hp>0).length;
     const el = document.createElement('div');
-    el.className = 'sys-planet-card '+ (own==='player'?'owned':own==='enemy'?'enemy':own==='locked'?'locked':'');
+    el.className = 'sys-planet-card '+(own==='player'?'owned':own==='enemy'?'enemy':own==='locked'?'locked':'');
     if(sysSelected===p.key) el.style.borderColor = 'var(--accent)';
-    el.innerHTML = '<div class="sp-name">'+p.name+'</div><div class="sp-meta">'+(
-      !s || !s.unlocked ? 'LOCKED' :
-      own==='player' ? 'SECURE · '+deployed+' deployed' :
-      own==='enemy' ? 'VORRH HELD · T'+(s.threat||'?') :
-      'CONTESTED · T'+(s.threat||'?')
+    const ownColor = own==='player'?'var(--accent)':own==='enemy'?'var(--danger)':'var(--muted)';
+    el.innerHTML = '<div class="sp-name">'+p.name+'</div><div class="sp-meta" style="color:'+ownColor+';font-weight:700">'+ownText+'</div><div class="sp-meta">'+(
+      !s||!s.unlocked ? 'Not yet reachable' :
+      'T'+s.threat+(deployed?' · '+deployed+' deployed':'')
     )+'</div>';
     el.onclick = ()=>{
       sysSelected = p.key;
       if(s && s.unlocked){
         showDetail(p.name, `
+          <div style="font-size:0.9rem;margin-bottom:8px;color:${ownColor};font-weight:800">${ownText}</div>
           <div style="font-size:0.85rem;color:var(--muted);margin-bottom:10px">${s.desc}</div>
           <div class="building-stat-grid">
             <div class="building-stat"><div class="label">STATUS</div>${s.status}</div>
             <div class="building-stat"><div class="label">THREAT</div>T${s.threat}</div>
-            <div class="building-stat"><div class="label">CONTROL</div>${own.toUpperCase()}</div>
+            <div class="building-stat"><div class="label">CONTROL</div>${ownText}</div>
             <div class="building-stat"><div class="label">FORCES</div>${deployed}</div>
           </div>
         `, [
-          {text:'Deploy / Open Sector', action:()=>{ closeDetail(); closeSystemMap(); selectSector(p.sector); }},
-          {text:'Focus in Map', action:()=>{ closeDetail(); sysFocus=p.key; sysTargetDist=Math.max(10, p.r*8+6); }},
+          {text:'Open Sector / Deploy', action:()=>{ closeDetail(); closeSystemMap(); selectSector(p.sector); }},
+          {text:'Focus in Map', action:()=>{ closeDetail(); sysFocus=p.key; sysTargetDist=Math.max(10, p.r*9+8); }},
           {text:'Close', action:closeDetail}
         ]);
-      } else {
-        toast(p.name+' is locked','warn');
-      }
+      } else toast(p.name+' is locked','warn');
       renderSysPlanetList();
     };
     list.appendChild(el);
   });
+}
+
+
+function initSystemMap2D(){
+  const wrap = document.getElementById('sysCanvasWrap');
+  if(!wrap) return;
+  wrap.querySelectorAll('canvas').forEach(c=>c.remove());
+  const canvas = document.createElement('canvas');
+  const w = wrap.clientWidth || 800, h = wrap.clientHeight || 420;
+  canvas.width = w; canvas.height = h;
+  canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.cursor = 'grab';
+  wrap.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  let angle = 0, selected = null;
+
+  const planets = SYS_PLANETS.map((p,i)=>({
+    ...p,
+    orbit: p.d * 8 + (p.d? 40 : 0),
+    px: 0, py: 0,
+    phase: Math.random()*Math.PI*2
+  }));
+
+  function draw(){
+    ctx.fillStyle = '#02040a';
+    ctx.fillRect(0,0,w,h);
+    // stars
+    ctx.fillStyle = '#ffffff';
+    for(let i=0;i<120;i++){
+      const sx = (i*97)%w, sy = (i*53)%h;
+      ctx.globalAlpha = 0.3 + (i%5)*0.1;
+      ctx.fillRect(sx, sy, 1, 1);
+    }
+    ctx.globalAlpha = 1;
+    const cx = w/2, cy = h/2;
+
+    planets.forEach(p=>{
+      if(p.d > 0){
+        // orbit
+        ctx.strokeStyle = '#1a2030';
+        ctx.beginPath();
+        ctx.arc(cx, cy, p.orbit, 0, Math.PI*2);
+        ctx.stroke();
+        const a = p.phase + angle * (0.2 / Math.max(1,p.d*0.15));
+        p.px = cx + Math.cos(a) * p.orbit;
+        p.py = cy + Math.sin(a) * p.orbit * 0.55;
+      } else {
+        p.px = cx; p.py = cy;
+      }
+      const own = getPlanetOwnership(p.sector);
+      const radius = p.key==='star' ? 22 : 10 + p.r * 6;
+      // glow
+      const grd = ctx.createRadialGradient(p.px,p.py,1,p.px,p.py,radius*2);
+      if(own==='enemy') grd.addColorStop(0,'rgba(255,59,92,0.5)');
+      else if(own==='player') grd.addColorStop(0,'rgba(0,229,160,0.5)');
+      else grd.addColorStop(0,'rgba(100,120,180,0.3)');
+      grd.addColorStop(1,'transparent');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(p.px,p.py,radius*2,0,Math.PI*2); ctx.fill();
+      // body
+      ctx.beginPath();
+      ctx.arc(p.px, p.py, radius, 0, Math.PI*2);
+      if(p.key==='star') ctx.fillStyle = '#ffcc44';
+      else if(own==='player') ctx.fillStyle = '#00e5a0';
+      else if(own==='enemy') ctx.fillStyle = '#ff3b5c';
+      else if(own==='locked') ctx.fillStyle = '#333355';
+      else ctx.fillStyle = '#6688aa';
+      ctx.fill();
+      // ring
+      if(p.sector){
+        ctx.strokeStyle = own==='player'?'#00e5a0':own==='enemy'?'#ff3b5c':'#555';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(p.px,p.py,radius+4,0,Math.PI*2); ctx.stroke();
+        ctx.lineWidth = 1;
+      }
+      // label
+      ctx.fillStyle = '#c8d0dc';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(p.name, p.px, p.py + radius + 14);
+    });
+    angle += 0.008;
+    sysAnimId = requestAnimationFrame(draw);
+  }
+
+  canvas.onclick = (e)=>{
+    const rect = canvas.getBoundingClientRect();
+    const x = (e.clientX-rect.left) * (w/rect.width);
+    const y = (e.clientY-rect.top) * (h/rect.height);
+    for(const p of planets){
+      if(!p.sector) continue;
+      const rad = 10 + p.r * 6 + 8;
+      if(Math.hypot(x-p.px, y-p.py) < rad){
+        sysSelected = p.key;
+        const s = state.sectors.find(x=>x.id===p.sector);
+        if(s && s.unlocked){
+          showDetail(p.name, '<div style="font-size:0.85rem;color:var(--muted)">'+s.desc+'</div><div style="margin-top:8px">Threat T'+s.threat+' · '+s.status+'</div>', [
+            {text:'Open Sector', action:()=>{ closeDetail(); closeSystemMap(); selectSector(p.sector); }},
+            {text:'Close', action:closeDetail}
+          ]);
+        } else toast(p.name+' locked','warn');
+        renderSysPlanetList();
+        break;
+      }
+    }
+  };
+  draw();
 }
 
 
